@@ -1,15 +1,33 @@
 import type { SafeUserInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
+import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
+import { getFriendStatus, sendFriendRequest } from "../services/friendService";
 import { getUserById } from "../services/userService";
 
 interface ViewProfileProps {
   username: string;
 }
+
+/**
+ * Displays another user's profile with friend request actions.
+ * Shows Send Friend Request (blue), pending status (grey), or You are friends (green)
+ * based on the relationship between the viewer and profile user.
+ */
 export default function ViewProfile({ username }: ViewProfileProps) {
+  const { user, pass } = useLoginContext();
   const [componentState, setComponentState] = useState<
     { type: "waiting" } | { type: "error"; msg: string } | { type: "profile"; user: SafeUserInfo }
   >({ type: "waiting" });
+  const [friendStatus, setFriendStatus] = useState<
+    | { type: "loading" }
+    | { type: "none" }
+    | { type: "pending_outgoing" }
+    | { type: "pending_incoming" }
+    | { type: "friends" }
+    | { type: "error"; msg: string }
+  >({ type: "loading" });
+  const [friendActionError, setFriendActionError] = useState<string | null>(null);
   const timeSince = useTimeSince();
 
   useEffect(() => {
@@ -34,6 +52,42 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     };
   }, [username]);
 
+  useEffect(() => {
+    if (componentState.type !== "profile") return;
+    let cancel = false;
+    // Show loading state after this effect runs (avoids linter warning)
+    queueMicrotask(() => setFriendStatus({ type: "loading" }));
+
+    getFriendStatus({ username: user.username, password: pass }, username)
+      .then((response) => {
+        if (cancel) return;
+        if ("error" in response) {
+          setFriendStatus({ type: "error", msg: response.error });
+        } else {
+          setFriendStatus({ type: response.status });
+        }
+      })
+      .catch((err) => {
+        if (cancel) return;
+        setFriendStatus({ type: "error", msg: `${err}` });
+      });
+
+    return () => {
+      cancel = true;
+    };
+  }, [componentState.type, username, user.username, pass]);
+
+  /** Sends a friend request to the profile user. */
+  async function handleSendFriendRequest() {
+    setFriendActionError(null);
+    const response = await sendFriendRequest({ username: user.username, password: pass }, username);
+    if ("error" in response) {
+      setFriendActionError(response.error);
+    } else {
+      setFriendStatus({ type: "pending_outgoing" });
+    }
+  }
+
   switch (componentState.type) {
     case "error":
       return <div style={{ color: "#f00" }}>{componentState.msg}</div>;
@@ -41,15 +95,52 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       return <div>Loading...</div>;
     case "profile":
       return (
-        <>
-          <h2>Profile for {componentState.user.display}</h2>
-          <div>
-            <ul>
-              <li>Username: {componentState.user.username}</li>
-              <li>Account created {timeSince(componentState.user.createdAt)}</li>
-            </ul>
+        <div className="content">
+          <div className="spacedSection">
+            <h2>Profile for {componentState.user.display}</h2>
+            <div>
+              <ul>
+                <li>Username: {componentState.user.username}</li>
+                <li>Account created {timeSince(componentState.user.createdAt)}</li>
+              </ul>
+            </div>
+            {friendActionError && (
+              <p className="error-message" style={{ color: "#f00" }}>
+                {friendActionError}
+              </p>
+            )}
+            <div>
+              {friendStatus.type === "loading" && (
+                <button className="primary narrow friendStatusGrey" disabled>
+                  Loading...
+                </button>
+              )}
+              {friendStatus.type === "none" && (
+                <button
+                  className="primary narrow friendStatusBlue"
+                  onClick={handleSendFriendRequest}
+                >
+                  Send Friend Request
+                </button>
+              )}
+              {friendStatus.type === "pending_outgoing" && (
+                <button className="primary narrow friendStatusGrey" disabled>
+                  Friend request pending
+                </button>
+              )}
+              {friendStatus.type === "pending_incoming" && (
+                <button className="primary narrow friendStatusGrey" disabled>
+                  They sent you a request
+                </button>
+              )}
+              {friendStatus.type === "friends" && (
+                <button className="primary narrow friendStatusGreen" disabled>
+                  You are friends
+                </button>
+              )}
+            </div>
           </div>
-        </>
+        </div>
       );
   }
 }

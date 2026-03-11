@@ -1,14 +1,80 @@
-import { useState } from "react";
+import type { FriendRequestInfo } from "@gamenite/shared";
+import { useEffect, useState } from "react";
 import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
 import useEditProfileForm from "../hooks/useEditProfileForm";
+import {
+  acceptFriendRequest,
+  declineFriendRequest,
+  getPendingFriendRequests,
+} from "../services/friendService";
 
+/**
+ * User's own profile page: edit display name, password, and manage friend requests.
+ * Displays pending incoming requests with Accept (green) and Decline (red) buttons.
+ */
 export default function UpdateProfile() {
-  const { user } = useLoginContext();
+  const { user, pass } = useLoginContext();
   const timeSince = useTimeSince();
   const [showPass, setShowPass] = useState(false);
   const { display, setDisplay, password, setPassword, confirm, setConfirm, err, handleSubmit } =
     useEditProfileForm();
+
+  const [pendingRequests, setPendingRequests] = useState<FriendRequestInfo[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+  const [requestActionError, setRequestActionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancel = false;
+    // Show loading state after this effect runs (avoids linter warning)
+    queueMicrotask(() => setRequestsLoading(true));
+
+    getPendingFriendRequests({ username: user.username, password: pass })
+      .then((response) => {
+        if (cancel) return;
+        setRequestsLoading(false);
+        if ("error" in response) {
+          setRequestActionError(response.error);
+        } else {
+          setPendingRequests(response);
+        }
+      })
+      .catch((err) => {
+        if (cancel) return;
+        setRequestsLoading(false);
+        setRequestActionError(`${err}`);
+      });
+
+    return () => {
+      cancel = true;
+    };
+  }, [user.username, pass]);
+
+  async function handleAccept(requestId: string) {
+    setRequestActionError(null);
+    const response = await acceptFriendRequest(
+      { username: user.username, password: pass },
+      requestId,
+    );
+    if ("error" in response) {
+      setRequestActionError(response.error);
+    } else {
+      setPendingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+    }
+  }
+
+  async function handleDecline(requestId: string) {
+    setRequestActionError(null);
+    const response = await declineFriendRequest(
+      { username: user.username, password: pass },
+      requestId,
+    );
+    if ("error" in response) {
+      setRequestActionError(response.error);
+    } else {
+      setPendingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+    }
+  }
 
   return (
     <form className="content spacedSection" onSubmit={handleSubmit}>
@@ -81,6 +147,34 @@ export default function UpdateProfile() {
             onChange={(e) => setConfirm(e.target.value)}
           />
         </div>
+      </div>
+      <hr />
+      <div className="spacedSection">
+        <h3>Pending friend requests</h3>
+        {requestActionError && (
+          <p className="error-message" style={{ color: "#f00" }}>
+            {requestActionError}
+          </p>
+        )}
+        {requestsLoading && <p>Loading...</p>}
+        {!requestsLoading && pendingRequests.length === 0 && (
+          <p className="smallAndGray">No pending friend requests</p>
+        )}
+        {!requestsLoading && pendingRequests.length > 0 && (
+          <ul>
+            {pendingRequests.map((req) => (
+              <li key={req.requestId} style={{ marginBottom: "0.5rem" }}>
+                <strong>{req.fromUser.display}</strong> ({req.fromUser.username}){" "}
+                <button className="accept narrow" onClick={() => handleAccept(req.requestId)}>
+                  Accept
+                </button>{" "}
+                <button className="decline narrow" onClick={() => handleDecline(req.requestId)}>
+                  Decline
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <hr />
       {err && <p className="error-message">{err}</p>}

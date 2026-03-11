@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import { z } from "zod";
 import * as http from "node:http";
 import * as chat from "./controllers/chat.controller.ts";
+import * as friend from "./controllers/friend.controller.ts";
 import * as game from "./controllers/game.controller.ts";
 import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
@@ -42,6 +43,11 @@ app.use(
         .post("/list", user.postList)
         .post("/login", user.postLogin)
         .post("/signup", user.postSignup)
+        .post("/friend-request", friend.postFriendRequest)
+        .post("/friend-requests", friend.getFriendRequests)
+        .post("/friend-request/:requestId/accept", friend.postAcceptFriendRequest)
+        .post("/friend-request/:requestId/decline", friend.postDeclineFriendRequest)
+        .post("/friend-status", friend.postFriendStatus)
         .post("/:username", user.postByUsername)
         .get("/:username", user.getByUsername),
     ),
