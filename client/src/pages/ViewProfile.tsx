@@ -2,6 +2,7 @@ import type { SafeUserInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
 import useTimeSince from "../hooks/useTimeSince";
 import { getUserById } from "../services/userService";
+import ProfilePictureDisplay from "../components/ProfilePictureDisplay";
 
 interface ViewProfileProps {
   username: string;
@@ -39,17 +40,26 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       return <div style={{ color: "#f00" }}>{componentState.msg}</div>;
     case "waiting":
       return <div>Loading...</div>;
-    case "profile":
+    case "profile": {
+      const user = componentState.user;
       return (
         <>
-          <h2>Profile for {componentState.user.display}</h2>
-          <div>
-            <ul>
-              <li>Username: {componentState.user.username}</li>
-              <li>Account created {timeSince(componentState.user.createdAt)}</li>
-            </ul>
+          <h2>Profile for {user.display}</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+            <ProfilePictureDisplay
+              avatarUrl={user.avatar}
+              displayName={user.display}
+              size="medium"
+            />
+            <div>
+              <ul>
+                <li>Username: {user.username}</li>
+                <li>Account created {timeSince(user.createdAt)}</li>
+              </ul>
+            </div>
           </div>
         </>
       );
+    }
   }
 }

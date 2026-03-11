@@ -2,13 +2,24 @@ import { useState } from "react";
 import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
 import useEditProfileForm from "../hooks/useEditProfileForm";
+import AvatarGallery from "../components/AvatarGallery";
 
 export default function UpdateProfile() {
   const { user } = useLoginContext();
   const timeSince = useTimeSince();
   const [showPass, setShowPass] = useState(false);
-  const { display, setDisplay, password, setPassword, confirm, setConfirm, err, handleSubmit } =
-    useEditProfileForm();
+  const {
+    display,
+    setDisplay,
+    password,
+    setPassword,
+    confirm,
+    setConfirm,
+    avatar,
+    setAvatar,
+    err,
+    handleSubmit,
+  } = useEditProfileForm();
 
   return (
     <form className="content spacedSection" onSubmit={handleSubmit}>
@@ -39,6 +50,11 @@ export default function UpdateProfile() {
             Reset
           </button>
         </div>
+      </div>
+      <hr />
+      <div className="spacedSection">
+        <h3>Profile picture</h3>
+        <AvatarGallery onSelect={setAvatar} selectedAvatar={avatar ?? undefined} />
       </div>
       <hr />
       <div className="spacedSection">
