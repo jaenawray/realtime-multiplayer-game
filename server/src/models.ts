@@ -115,10 +115,12 @@ export interface ThreadRecord {
  * - `display`: A display name
  * - `createdAt`: when this user registered.
  * - `avatar`: URL to the user's profile picture, or undefined for default avatar
+ * - `bio`: User's bio text (max 500 characters), or undefined if not set
  */
 export interface UserRecord {
   username: string; // References Auth records
   display: string;
   createdAt: DateISO;
   avatar?: string;
+  bio?: string;
 }

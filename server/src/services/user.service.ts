@@ -17,6 +17,7 @@ export async function populateSafeUserInfo(userId: string): Promise<SafeUserInfo
     display: record.display,
     createdAt: new Date(record.createdAt),
     avatar: record.avatar,
+    bio: record.bio,
   });
 }
 
@@ -79,7 +80,7 @@ export async function getUsersByUsername(usernames: string[]): Promise<SafeUserI
  */
 export async function updateUser(
   username: string,
-  { display, password, avatar }: UserUpdateRequest,
+  { display, password, avatar, bio }: UserUpdateRequest,
 ): Promise<SafeUserInfo> {
   const user = await getUserByUsername(username);
   if (!user) throw new Error(`No user ${username}`);
@@ -87,6 +88,7 @@ export async function updateUser(
   const newUser = await UserRepo.get(user.userId);
   if (display !== undefined) newUser.display = display;
   if (avatar !== undefined) newUser.avatar = avatar;
+  if (bio !== undefined) newUser.bio = bio;
   await UserRepo.set(user.userId, newUser);
   return populateSafeUserInfo(user.userId);
 }

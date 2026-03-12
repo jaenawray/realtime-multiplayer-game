@@ -5,11 +5,13 @@ import { updateUser } from "../services/userService.ts";
 import type { UserUpdateRequest } from "@gamenite/shared";
 import { DEFAULT_AVATAR } from "../components/avatarLibrary";
 
+const BIO_MAX_LENGTH = 500;
+
 /**
  * Custom hook to manage profile form logic
  * @returns an object containing
- *  - Form values `display`, `password`, `confirm`, and `avatar`
- *  - Form setters `setDisplay`, `setPassword`, `setConfirm`, and `setAvatar`
+ *  - Form values `display`, `password`, `confirm`, `avatar`, and `bio`
+ *  - Form setters `setDisplay`, `setPassword`, `setConfirm`, `setAvatar`, and `setBio`
  *  - Possibly-null error message `err`
  *  - Submission handler `handleSubmit`
  */
@@ -19,6 +21,7 @@ export default function useEditProfileForm() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [avatar, setAvatar] = useState<string>(user.avatar ?? DEFAULT_AVATAR);
+  const [bio, setBio] = useState(user.bio ?? "");
   const [err, setErr] = useState<null | string>(null);
   const auth = useAuth();
 
@@ -31,9 +34,15 @@ export default function useEditProfileForm() {
     const hasDisplayChange = display !== user.display;
     const hasPasswordChange = password !== "" && password === confirm;
     const hasAvatarChange = avatar !== user.avatar;
+    const hasBioChange = bio !== (user.bio ?? "");
 
-    if (!hasDisplayChange && !hasPasswordChange && !hasAvatarChange) {
+    if (!hasDisplayChange && !hasPasswordChange && !hasAvatarChange && !hasBioChange) {
       setErr("No changes to submit");
+      return;
+    }
+
+    if (hasBioChange && bio.length > BIO_MAX_LENGTH) {
+      setErr(`Bio must be ${BIO_MAX_LENGTH} characters or less`);
       return;
     }
 
@@ -66,6 +75,7 @@ export default function useEditProfileForm() {
     if (hasDisplayChange) updates.display = display;
     if (hasPasswordChange) updates.password = password;
     if (hasAvatarChange) updates.avatar = avatar;
+    if (hasBioChange) updates.bio = bio;
 
     const response = await updateUser(auth, updates);
     if ("error" in response) {
@@ -90,6 +100,9 @@ export default function useEditProfileForm() {
     setConfirm,
     avatar,
     setAvatar: handleSetAvatar,
+    bio,
+    setBio,
+    bioMaxLength: BIO_MAX_LENGTH,
     err,
     handleSubmit,
   };

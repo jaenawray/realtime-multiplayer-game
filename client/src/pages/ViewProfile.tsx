@@ -56,6 +56,12 @@ export default function ViewProfile({ username }: ViewProfileProps) {
                 <li>Username: {user.username}</li>
                 <li>Account created {timeSince(user.createdAt)}</li>
               </ul>
+              {user.bio && (
+                <div style={{ marginTop: "0.5rem" }}>
+                  <strong>Bio</strong>
+                  <p style={{ whiteSpace: "pre-wrap", margin: "0.25rem 0 0 0" }}>{user.bio}</p>
+                </div>
+              )}
             </div>
           </div>
         </>
