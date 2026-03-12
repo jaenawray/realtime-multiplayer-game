@@ -1,4 +1,4 @@
-import type { FriendRequestInfo } from "@gamenite/shared";
+import type { FriendRequestInfo } from "../../../shared/src/friend.types.ts";
 import { useEffect, useState } from "react";
 import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
@@ -52,10 +52,10 @@ export default function UpdateProfile() {
 
   async function handleAccept(requestId: string) {
     setRequestActionError(null);
-    const response = await acceptFriendRequest(
+    const response = (await acceptFriendRequest(
       { username: user.username, password: pass },
       requestId,
-    );
+    )) as FriendRequestInfo | { error: string };
     if ("error" in response) {
       setRequestActionError(response.error);
     } else {
@@ -65,10 +65,10 @@ export default function UpdateProfile() {
 
   async function handleDecline(requestId: string) {
     setRequestActionError(null);
-    const response = await declineFriendRequest(
+    const response = (await declineFriendRequest(
       { username: user.username, password: pass },
       requestId,
-    );
+    )) as { success: true } | { error: string };
     if ("error" in response) {
       setRequestActionError(response.error);
     } else {

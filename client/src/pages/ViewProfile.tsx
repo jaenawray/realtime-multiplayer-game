@@ -1,4 +1,4 @@
-import type { SafeUserInfo } from "@gamenite/shared";
+import type { SafeUserInfo } from "../../../shared/src/user.types.ts";
 import { useEffect, useState } from "react";
 import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
@@ -80,7 +80,10 @@ export default function ViewProfile({ username }: ViewProfileProps) {
   /** Sends a friend request to the profile user. */
   async function handleSendFriendRequest() {
     setFriendActionError(null);
-    const response = await sendFriendRequest({ username: user.username, password: pass }, username);
+    const response = (await sendFriendRequest(
+      { username: user.username, password: pass },
+      username,
+    )) as { requestId: string } | { error: string };
     if ("error" in response) {
       setFriendActionError(response.error);
     } else {
