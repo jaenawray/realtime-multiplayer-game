@@ -120,3 +120,22 @@ export interface UserRecord {
   display: string;
   createdAt: DateISO;
 }
+
+/**
+ * Status of a friend request: pending, accepted, or declined.
+ */
+export type FriendRequestStatus = "pending" | "accepted" | "declined";
+
+/**
+ * Represents a friend request in the database.
+ * - `fromUserId`: the user who sent the request
+ * - `toUserId`: the user who received the request
+ * - `status`: current status of the request
+ * - `createdAt`: when the request was sent
+ */
+export interface FriendRequestRecord {
+  fromUserId: RecordId;
+  toUserId: RecordId;
+  status: FriendRequestStatus;
+  createdAt: DateISO;
+}

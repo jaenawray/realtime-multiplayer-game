@@ -3,6 +3,7 @@ import type {
   AuthRecord,
   ChatRecord,
   CommentRecord,
+  FriendRequestRecord,
   GameRecord,
   MessageRecord,
   ThreadRecord,
@@ -12,6 +13,7 @@ import type {
 export const AuthRepo = createRepo<AuthRecord>("auth");
 export const ChatRepo = createRepo<ChatRecord>("chat");
 export const CommentRepo = createRepo<CommentRecord>("comment");
+export const FriendRequestRepo = createRepo<FriendRequestRecord>("friendRequest");
 export const GameRepo = createRepo<GameRecord>("game");
 export const MessageRepo = createRepo<MessageRecord>("message");
 export const ThreadRepo = createRepo<ThreadRecord>("thread");
