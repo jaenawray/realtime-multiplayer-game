@@ -4,6 +4,7 @@ import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
 import { getFriendStatus, sendFriendRequest } from "../services/friendService";
 import { getUserById } from "../services/userService";
+import ProfilePictureDisplay from "../components/ProfilePictureDisplay";
 
 interface ViewProfileProps {
   username: string;
@@ -96,16 +97,30 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       return <div style={{ color: "#f00" }}>{componentState.msg}</div>;
     case "waiting":
       return <div>Loading...</div>;
-    case "profile":
+    case "profile": {
+      const profileUser = componentState.user;
       return (
         <div className="content">
           <div className="spacedSection">
-            <h2>Profile for {componentState.user.display}</h2>
-            <div>
-              <ul>
-                <li>Username: {componentState.user.username}</li>
-                <li>Account created {timeSince(componentState.user.createdAt)}</li>
-              </ul>
+            <h2>Profile for {profileUser.display}</h2>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+              <ProfilePictureDisplay
+                avatarUrl={profileUser.avatar}
+                displayName={profileUser.display}
+                size="medium"
+              />
+              <div>
+                <ul>
+                  <li>Username: {profileUser.username}</li>
+                  <li>Account created {timeSince(profileUser.createdAt)}</li>
+                </ul>
+                {profileUser.bio && (
+                  <div style={{ marginTop: "0.5rem" }}>
+                    <strong>Bio</strong>
+                    <p style={{ whiteSpace: "pre-wrap", margin: "0.25rem 0 0 0" }}>{profileUser.bio}</p>
+                  </div>
+                )}
+              </div>
             </div>
             {friendActionError && (
               <p className="error-message" style={{ color: "#f00" }}>
@@ -145,5 +160,6 @@ export default function ViewProfile({ username }: ViewProfileProps) {
           </div>
         </div>
       );
+    }
   }
 }

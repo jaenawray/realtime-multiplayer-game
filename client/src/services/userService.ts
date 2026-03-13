@@ -35,6 +35,24 @@ export const updateUser = async (
 };
 
 /**
+ * Sends a PUT request to update a user's avatar
+ */
+export const updateUserAvatar = async (
+  auth: UserAuth,
+  avatarUrl: string,
+): APIResponse<SafeUserInfo> => {
+  try {
+    const res = await api.put<SafeUserInfo | ErrorMsg>(`${USER_API_URL}/${auth.username}`, {
+      auth,
+      payload: { avatar: avatarUrl },
+    });
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
+/**
  * Sends a POST request to create a user
  *
  * @param user - The user credentials (username and password) for login.

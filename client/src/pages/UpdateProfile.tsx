@@ -4,6 +4,7 @@ import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
 import useEditProfileForm from "../hooks/useEditProfileForm";
 import FriendsList from "../components/FriendsList";
+import AvatarGallery from "../components/AvatarGallery";
 import {
   acceptFriendRequest,
   declineFriendRequest,
@@ -18,8 +19,21 @@ export default function UpdateProfile() {
   const { user, pass } = useLoginContext();
   const timeSince = useTimeSince();
   const [showPass, setShowPass] = useState(false);
-  const { display, setDisplay, password, setPassword, confirm, setConfirm, err, handleSubmit } =
-    useEditProfileForm();
+  const {
+    display,
+    setDisplay,
+    password,
+    setPassword,
+    confirm,
+    setConfirm,
+    avatar,
+    setAvatar,
+    bio,
+    setBio,
+    bioMaxLength,
+    err,
+    handleSubmit,
+  } = useEditProfileForm();
 
   const [pendingRequests, setPendingRequests] = useState<FriendRequestInfo[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
@@ -106,6 +120,43 @@ export default function UpdateProfile() {
             Reset
           </button>
         </div>
+      </div>
+      <hr />
+      <div className="spacedSection">
+        <h3>Bio</h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <textarea
+            className="widefill notTooWide"
+            placeholder="Tell us about yourself..."
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            maxLength={bioMaxLength}
+            rows={4}
+            style={{ resize: "vertical" }}
+          />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span
+              className="smallAndGray"
+              style={{ color: bio.length > bioMaxLength ? "#f00" : undefined }}
+            >
+              {bio.length}/{bioMaxLength} characters
+            </span>
+            <button
+              className="secondary narrow"
+              onClick={(e) => {
+                e.preventDefault(); // Don't submit form
+                setBio(user.bio ?? "");
+              }}
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+      <hr />
+      <div className="spacedSection">
+        <h3>Profile picture</h3>
+        <AvatarGallery onSelect={setAvatar} selectedAvatar={avatar ?? undefined} />
       </div>
       <hr />
       <div className="spacedSection">

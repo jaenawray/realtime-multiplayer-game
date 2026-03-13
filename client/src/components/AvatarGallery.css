@@ -1,0 +1,54 @@
+.avatar-gallery-container {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid lightgrey;
+  border-radius: 0.5rem;
+  background-color: white;
+}
+
+.avatar-gallery-container h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.avatar-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 1rem;
+}
+
+.avatar-item {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  padding: 4px;
+  border: 2px solid lightgrey;
+  border-radius: 0.5rem;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.avatar-item:hover {
+  border-color: orange;
+  transform: scale(1.25);
+}
+
+.avatar-item.selected {
+  border-color: orange;
+  background-color: white;
+  box-shadow: 0 0 0 2px coral;
+}
+
+.avatar-item img {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.25rem;
+  object-fit: cover;
+}
+
+.error-message {
+  color: darkred;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
