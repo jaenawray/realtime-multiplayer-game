@@ -103,7 +103,9 @@ export default function ViewProfile({ username }: ViewProfileProps) {
         <div className="content">
           <div className="spacedSection">
             <h2>Profile for {profileUser.display}</h2>
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}
+            >
               <ProfilePictureDisplay
                 avatarUrl={profileUser.avatar}
                 displayName={profileUser.display}
@@ -117,7 +119,9 @@ export default function ViewProfile({ username }: ViewProfileProps) {
                 {profileUser.bio && (
                   <div style={{ marginTop: "0.5rem" }}>
                     <strong>Bio</strong>
-                    <p style={{ whiteSpace: "pre-wrap", margin: "0.25rem 0 0 0" }}>{profileUser.bio}</p>
+                    <p style={{ whiteSpace: "pre-wrap", margin: "0.25rem 0 0 0" }}>
+                      {profileUser.bio}
+                    </p>
                   </div>
                 )}
               </div>
