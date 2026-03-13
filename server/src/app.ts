@@ -48,6 +48,8 @@ app.use(
         .post("/friend-request/:requestId/accept", friend.postAcceptFriendRequest)
         .post("/friend-request/:requestId/decline", friend.postDeclineFriendRequest)
         .post("/friend-status", friend.postFriendStatus)
+        .post("/friends-list", friend.getFriendsListEndpoint)
+        .post("/remove-friend", friend.postRemoveFriend)
         .post("/:username", user.postByUsername)
         .get("/:username", user.getByUsername),
     ),

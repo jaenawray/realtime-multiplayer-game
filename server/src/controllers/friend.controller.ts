@@ -1,4 +1,4 @@
-import { type FriendRequestInfo, withAuth, zUserAuth } from "@gamenite/shared";
+import { type FriendRequestInfo, type SafeUserInfo, withAuth, zUserAuth } from "@gamenite/shared";
 import { type RestAPI } from "../types.ts";
 import { z } from "zod";
 import { checkAuth } from "../services/auth.service.ts";
@@ -8,6 +8,8 @@ import {
   getFriendStatus,
   getPendingFriendRequests,
   sendFriendRequest,
+  getFriendsList,
+  removeFriend,
 } from "../services/friend.service.ts";
 
 const zSendFriendRequest = z.object({
@@ -134,6 +136,49 @@ export const postFriendStatus: RestAPI<
   }
 
   const result = await getFriendStatus(user.username, body.data.payload.username);
+  if ("error" in result) {
+    res.status(400).send({ error: result.error });
+    return;
+  }
+  res.send(result);
+};
+/**
+ * Get list of friends for current user.
+ */
+export const getFriendsListEndpoint: RestAPI<SafeUserInfo[]> = async (req, res) => {
+  const body = z.object({ auth: zUserAuth }).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const friends = await getFriendsList(user.username);
+  res.send(friends);
+};
+
+/**
+ * Remove a friend.
+ */
+export const postRemoveFriend: RestAPI<{ success: true }> = async (req, res) => {
+  const body = withAuth(z.object({ friendUsername: z.string() })).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const result = await removeFriend(user.username, body.data.payload.friendUsername);
   if ("error" in result) {
     res.status(400).send({ error: result.error });
     return;

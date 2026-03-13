@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
 import useEditProfileForm from "../hooks/useEditProfileForm";
+import FriendsList from "../components/FriendsList";
 import {
   acceptFriendRequest,
   declineFriendRequest,
@@ -147,6 +148,10 @@ export default function UpdateProfile() {
             onChange={(e) => setConfirm(e.target.value)}
           />
         </div>
+      </div>
+      <hr />
+      <div className="spacedSection">
+        <FriendsList auth={{ username: user.username, password: pass }} canModify={true} />
       </div>
       <hr />
       <div className="spacedSection">

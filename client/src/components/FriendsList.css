@@ -1,0 +1,30 @@
+.friends-list-container {
+  background-color: white;
+}
+
+.friends-list-container h3 {
+  color: #333;
+}
+
+.friends-list-container.error {
+  color: oklch(0.5 0.2 25);
+}
+
+.no-friends {
+  color: darkgrey;
+  font-style: italic;
+}
+
+.friend-item {
+  background-color: white;
+}
+
+.friend-item:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.remove-friend-btn {
+  background-color: oklch(0.5 0.2 25);
+  color: white;
+  cursor: pointer;
+}

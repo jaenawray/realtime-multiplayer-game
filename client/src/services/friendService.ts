@@ -1,6 +1,6 @@
 import type { APIResponse } from "../util/types.ts";
 import { api, exceptionToErrorMsg } from "./api.ts";
-import type { ErrorMsg, FriendRequestInfo, UserAuth } from "@gamenite/shared";
+import type { FriendRequestInfo, UserAuth, SafeUserInfo } from "@gamenite/shared";
 
 const USER_API_URL = `/api/user`;
 
@@ -25,7 +25,7 @@ export const sendFriendRequest = async (
   targetUsername: string,
 ): APIResponse<FriendRequestInfo> => {
   try {
-    const res = await api.post<FriendRequestInfo | ErrorMsg>(`${USER_API_URL}/friend-request`, {
+    const res = await api.post<FriendRequestInfo>(`${USER_API_URL}/friend-request`, {
       auth,
       payload: { targetUsername },
     });
@@ -42,7 +42,7 @@ export const getPendingFriendRequests = async (
   auth: UserAuth,
 ): APIResponse<FriendRequestInfo[]> => {
   try {
-    const res = await api.post<FriendRequestInfo[] | ErrorMsg>(`${USER_API_URL}/friend-requests`, {
+    const res = await api.post<FriendRequestInfo[]>(`${USER_API_URL}/friend-requests`, {
       auth,
     });
     return res.data;
@@ -59,7 +59,7 @@ export const acceptFriendRequest = async (
   requestId: string,
 ): APIResponse<FriendRequestInfo> => {
   try {
-    const res = await api.post<FriendRequestInfo | ErrorMsg>(
+    const res = await api.post<FriendRequestInfo>(
       `${USER_API_URL}/friend-request/${requestId}/accept`,
       { auth },
     );
@@ -77,7 +77,7 @@ export const declineFriendRequest = async (
   requestId: string,
 ): APIResponse<{ success: true }> => {
   try {
-    const res = await api.post<{ success: true } | ErrorMsg>(
+    const res = await api.post<{ success: true }>(
       `${USER_API_URL}/friend-request/${requestId}/decline`,
       { auth },
     );
@@ -95,9 +95,40 @@ export const getFriendStatus = async (
   username: string,
 ): APIResponse<FriendStatus> => {
   try {
-    const res = await api.post<FriendStatus | ErrorMsg>(`${USER_API_URL}/friend-status`, {
+    const res = await api.post<FriendStatus>(`${USER_API_URL}/friend-status`, {
       auth,
       payload: { username },
+    });
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+/**
+ * Get list of friends for the current user.
+ */
+export const getFriendsList = async (auth: UserAuth): APIResponse<SafeUserInfo[]> => {
+  try {
+    const res = await api.post<SafeUserInfo[]>(`${USER_API_URL}/friends-list`, {
+      auth,
+    });
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
+/**
+ * Remove a friend.
+ */
+export const removeFriend = async (
+  auth: UserAuth,
+  friendUsername: string,
+): APIResponse<{ success: true }> => {
+  try {
+    const res = await api.post<{ success: true }>(`${USER_API_URL}/remove-friend`, {
+      auth,
+      payload: { friendUsername },
     });
     return res.data;
   } catch (error) {

@@ -60,6 +60,13 @@ export interface Repo<Value> {
    * @returns
    */
   clear: () => Promise<void>;
+
+  /**
+   * Delete a specific key from storage
+   * @param key
+   * @returns true if the key existed and was deleted, false otherwise
+   */
+  delete: (key: Key) => Promise<boolean>;
 }
 
 /** Singleton initializer for databases */
@@ -159,6 +166,11 @@ export function createRepo<T = unknown>(repoName: string): Repo<T> {
       if (_store !== null) {
         await _store.clear();
       }
+    },
+
+    delete: async (key) => {
+      const store = getStore();
+      return await store.delete(key);
     },
   };
 }

@@ -192,3 +192,64 @@ export async function getFriendStatus(
 
   return { status: "none" };
 }
+/**
+ * Get all accepted friends for a user.
+ *
+ * @param username - The user whose friends to fetch
+ * @returns List of friend user info
+ */
+export async function getFriendsList(username: string) {
+  const user = await getUserByUsername(username);
+  if (!user) return [];
+
+  const allKeys = await FriendRequestRepo.getAllKeys();
+  const friendUserIds = new Set<string>();
+
+  for (const key of allKeys) {
+    const req = await FriendRequestRepo.get(key);
+    if (req.status === "accepted") {
+      if (req.fromUserId === user.userId) {
+        friendUserIds.add(req.toUserId);
+      } else if (req.toUserId === user.userId) {
+        friendUserIds.add(req.fromUserId);
+      }
+    }
+  }
+
+  const friends = await Promise.all(
+    Array.from(friendUserIds).map((userId) => populateSafeUserInfo(userId)),
+  );
+
+  return friends;
+}
+
+/**
+ * Remove a friend (delete the friendship).
+ *
+ * @param username - The user removing the friend
+ * @param friendUsername - The friend to remove
+ * @returns Success or error message
+ */
+export async function removeFriend(
+  username: string,
+  friendUsername: string,
+): Promise<{ success: true } | { error: string }> {
+  const user = await getUserByUsername(username);
+  const friend = await getUserByUsername(friendUsername);
+  if (!user || !friend) return { error: "User not found" };
+
+  const allKeys = await FriendRequestRepo.getAllKeys();
+
+  for (const key of allKeys) {
+    const req = await FriendRequestRepo.get(key);
+    const isUserToFriend = req.fromUserId === user.userId && req.toUserId === friend.userId;
+    const isFriendToUser = req.fromUserId === friend.userId && req.toUserId === user.userId;
+
+    if ((isUserToFriend || isFriendToUser) && req.status === "accepted") {
+      await FriendRequestRepo.delete(key);
+      return { success: true };
+    }
+  }
+
+  return { error: "Friendship not found" };
+}
