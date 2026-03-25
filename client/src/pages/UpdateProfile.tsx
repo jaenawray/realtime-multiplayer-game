@@ -16,7 +16,7 @@ import {
  * Displays pending incoming requests with Accept (green) and Decline (red) buttons.
  */
 export default function UpdateProfile() {
-  const { user, pass } = useLoginContext();
+  const { user, pass, socket } = useLoginContext();
   const timeSince = useTimeSince();
   const [showPass, setShowPass] = useState(false);
   const {
@@ -65,6 +65,58 @@ export default function UpdateProfile() {
     };
   }, [user.username, pass]);
 
+  // Real-time pending request updates
+  useEffect(() => {
+    const handleReceived = (payload: FriendRequestInfo) => {
+      if (payload.toUser.username === user.username) {
+        setPendingRequests((prev) => [payload, ...prev]);
+      }
+    };
+
+    const handleCancelled = (payload: {
+      requestId: string;
+      fromUsername: string;
+      toUsername: string;
+    }) => {
+      if (payload.toUsername === user.username) {
+        setPendingRequests((prev) => prev.filter((r) => r.requestId !== payload.requestId));
+      }
+    };
+
+    const handleAccepted = (payload: FriendRequestInfo) => {
+      if (payload.toUser.username === user.username) {
+        setPendingRequests((prev) => prev.filter((r) => r.requestId !== payload.requestId));
+      }
+    };
+
+    const handleDeclined = (payload: {
+      requestId: string;
+      fromUsername: string;
+      toUsername: string;
+    }) => {
+      if (payload.toUsername === user.username) {
+        setPendingRequests((prev) => prev.filter((r) => r.requestId !== payload.requestId));
+      }
+    };
+
+    socket.on("friendRequestReceived", handleReceived);
+    socket.on("friendRequestCancelled", handleCancelled);
+    socket.on("friendRequestAccepted", handleAccepted);
+    socket.on("friendRequestDeclined", handleDeclined);
+
+    return () => {
+      socket.off("friendRequestReceived", handleReceived);
+      socket.off("friendRequestCancelled", handleCancelled);
+      socket.off("friendRequestAccepted", handleAccepted);
+      socket.off("friendRequestDeclined", handleDeclined);
+    };
+  }, [user.username, socket]);
+
+  const staleRequestErrors = [
+    "This request has already been responded to",
+    "Friend request not found",
+  ];
+
   async function handleAccept(requestId: string) {
     setRequestActionError(null);
     const response = (await acceptFriendRequest(
@@ -72,7 +124,12 @@ export default function UpdateProfile() {
       requestId,
     )) as FriendRequestInfo | { error: string };
     if ("error" in response) {
-      setRequestActionError(response.error);
+      if (staleRequestErrors.includes(response.error)) {
+        setPendingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+        setRequestActionError("This request is no longer available (it may have been cancelled).");
+      } else {
+        setRequestActionError(response.error);
+      }
     } else {
       setPendingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
     }
@@ -85,7 +142,12 @@ export default function UpdateProfile() {
       requestId,
     )) as { success: true } | { error: string };
     if ("error" in response) {
-      setRequestActionError(response.error);
+      if (staleRequestErrors.includes(response.error)) {
+        setPendingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+        setRequestActionError("This request is no longer available (it may have been cancelled).");
+      } else {
+        setRequestActionError(response.error);
+      }
     } else {
       setPendingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
     }

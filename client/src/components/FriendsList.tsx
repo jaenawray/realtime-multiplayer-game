@@ -1,5 +1,7 @@
 import type { SafeUserInfo, UserAuth } from "@gamenite/shared";
+import type { FriendRequestInfo } from "../../../shared/src/friend.types.ts";
 import { useEffect, useState } from "react";
+import useLoginContext from "../hooks/useLoginContext";
 import { getFriendsList, removeFriend } from "../services/friendService";
 
 interface FriendsListProps {
@@ -8,6 +10,7 @@ interface FriendsListProps {
 }
 
 export default function FriendsList({ auth, canModify = false }: FriendsListProps) {
+  const { socket } = useLoginContext();
   const [friends, setFriends] = useState<SafeUserInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +40,33 @@ export default function FriendsList({ auth, canModify = false }: FriendsListProp
       cancel = true;
     };
   }, [auth]);
+
+  // Real-time friends list updates
+  useEffect(() => {
+    const handleAccepted = (payload: FriendRequestInfo) => {
+      if (payload.fromUser.username === auth.username) {
+        setFriends((prev) => [...prev, payload.toUser]);
+      } else if (payload.toUser.username === auth.username) {
+        setFriends((prev) => [...prev, payload.fromUser]);
+      }
+    };
+
+    const handleRemoved = (payload: { username: string; friendUsername: string }) => {
+      if (payload.username === auth.username) {
+        setFriends((prev) => prev.filter((f) => f.username !== payload.friendUsername));
+      } else if (payload.friendUsername === auth.username) {
+        setFriends((prev) => prev.filter((f) => f.username !== payload.username));
+      }
+    };
+
+    socket.on("friendRequestAccepted", handleAccepted);
+    socket.on("friendRemoved", handleRemoved);
+
+    return () => {
+      socket.off("friendRequestAccepted", handleAccepted);
+      socket.off("friendRemoved", handleRemoved);
+    };
+  }, [auth.username, socket]);
 
   const handleRemoveFriend = async (friendUsername: string) => {
     setError(null);

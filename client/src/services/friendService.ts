@@ -13,7 +13,7 @@ const USER_API_URL = `/api/user`;
  */
 export type FriendStatus =
   | { status: "none" }
-  | { status: "pending_outgoing" }
+  | { status: "pending_outgoing"; requestId: string }
   | { status: "pending_incoming" }
   | { status: "friends" };
 
@@ -129,6 +129,23 @@ export const removeFriend = async (
     const res = await api.post<{ success: true }>(`${USER_API_URL}/remove-friend`, {
       auth,
       payload: { friendUsername },
+    });
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
+/**
+ * Cancel an outgoing friend request.
+ */
+export const cancelFriendRequest = async (
+  auth: UserAuth,
+  requestId: string,
+): APIResponse<{ success: true }> => {
+  try {
+    const res = await api.delete<{ success: true }>(`${USER_API_URL}/friend-request/${requestId}`, {
+      data: { auth },
     });
     return res.data;
   } catch (error) {

@@ -43,13 +43,14 @@ app.use(
         .post("/list", user.postList)
         .post("/login", user.postLogin)
         .post("/signup", user.postSignup)
-        .post("/friend-request", friend.postFriendRequest)
+        .post("/friend-request", friend.postFriendRequest(io))
         .post("/friend-requests", friend.getFriendRequests)
-        .post("/friend-request/:requestId/accept", friend.postAcceptFriendRequest)
-        .post("/friend-request/:requestId/decline", friend.postDeclineFriendRequest)
+        .post("/friend-request/:requestId/accept", friend.postAcceptFriendRequest(io))
+        .post("/friend-request/:requestId/decline", friend.postDeclineFriendRequest(io))
+        .delete("/friend-request/:requestId", friend.deleteFriendRequest(io))
         .post("/friend-status", friend.postFriendStatus)
         .post("/friends-list", friend.getFriendsListEndpoint)
-        .post("/remove-friend", friend.postRemoveFriend)
+        .post("/remove-friend", friend.postRemoveFriend(io))
         .post("/:username", user.postByUsername)
         .get("/:username", user.getByUsername),
     ),

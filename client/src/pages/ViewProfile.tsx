@@ -1,8 +1,9 @@
 import type { SafeUserInfo } from "../../../shared/src/user.types.ts";
+import type { FriendRequestInfo } from "../../../shared/src/friend.types.ts";
 import { useEffect, useState } from "react";
 import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
-import { getFriendStatus, sendFriendRequest } from "../services/friendService";
+import { cancelFriendRequest, getFriendStatus, sendFriendRequest } from "../services/friendService";
 import { getUserById } from "../services/userService";
 import ProfilePictureDisplay from "../components/ProfilePictureDisplay";
 
@@ -16,14 +17,14 @@ interface ViewProfileProps {
  * based on the relationship between the viewer and profile user.
  */
 export default function ViewProfile({ username }: ViewProfileProps) {
-  const { user, pass } = useLoginContext();
+  const { user, pass, socket } = useLoginContext();
   const [componentState, setComponentState] = useState<
     { type: "waiting" } | { type: "error"; msg: string } | { type: "profile"; user: SafeUserInfo }
   >({ type: "waiting" });
   const [friendStatus, setFriendStatus] = useState<
     | { type: "loading" }
     | { type: "none" }
-    | { type: "pending_outgoing" }
+    | { type: "pending_outgoing"; requestId: string }
     | { type: "pending_incoming" }
     | { type: "friends" }
     | { type: "error"; msg: string }
@@ -64,6 +65,8 @@ export default function ViewProfile({ username }: ViewProfileProps) {
         if (cancel) return;
         if ("error" in response) {
           setFriendStatus({ type: "error", msg: response.error });
+        } else if (response.status === "pending_outgoing") {
+          setFriendStatus({ type: "pending_outgoing", requestId: response.requestId });
         } else {
           setFriendStatus({ type: response.status });
         }
@@ -78,6 +81,65 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     };
   }, [componentState.type, username, user.username, pass]);
 
+  // Real-time friend status updates
+  useEffect(() => {
+    if (componentState.type !== "profile") return;
+
+    const handleReceived = (payload: FriendRequestInfo) => {
+      if (payload.fromUser.username === username && payload.toUser.username === user.username) {
+        setFriendStatus({ type: "pending_incoming" });
+      }
+    };
+
+    const handleCancelled = (payload: {
+      requestId: string;
+      fromUsername: string;
+      toUsername: string;
+    }) => {
+      if (payload.fromUsername === username && payload.toUsername === user.username) {
+        setFriendStatus({ type: "none" });
+      }
+    };
+
+    const handleAccepted = (payload: FriendRequestInfo) => {
+      const bothInvolved =
+        (payload.fromUser.username === user.username && payload.toUser.username === username) ||
+        (payload.toUser.username === user.username && payload.fromUser.username === username);
+      if (bothInvolved) setFriendStatus({ type: "friends" });
+    };
+
+    const handleDeclined = (payload: {
+      requestId: string;
+      fromUsername: string;
+      toUsername: string;
+    }) => {
+      if (payload.fromUsername === user.username && payload.toUsername === username) {
+        setFriendStatus({ type: "none" });
+      }
+    };
+
+    const handleRemoved = (payload: { username: string; friendUsername: string }) => {
+      const bothInvolved =
+        (payload.username === user.username && payload.friendUsername === username) ||
+        (payload.username === username && payload.friendUsername === user.username);
+      if (bothInvolved) setFriendStatus({ type: "none" });
+    };
+
+    socket.on("friendRequestReceived", handleReceived);
+    socket.on("friendRequestCancelled", handleCancelled);
+    socket.on("friendRequestAccepted", handleAccepted);
+    socket.on("friendRequestDeclined", handleDeclined);
+    socket.on("friendRemoved", handleRemoved);
+
+    return () => {
+      socket.off("friendRequestReceived", handleReceived);
+      socket.off("friendRequestCancelled", handleCancelled);
+      socket.off("friendRequestAccepted", handleAccepted);
+      socket.off("friendRequestDeclined", handleDeclined);
+      socket.off("friendRemoved", handleRemoved);
+    };
+  }, [componentState.type, username, user.username, socket]);
+
   /** Sends a friend request to the profile user. */
   async function handleSendFriendRequest() {
     setFriendActionError(null);
@@ -88,7 +150,21 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     if ("error" in response) {
       setFriendActionError(response.error);
     } else {
-      setFriendStatus({ type: "pending_outgoing" });
+      setFriendStatus({ type: "pending_outgoing", requestId: response.requestId });
+    }
+  }
+
+  /** Cancels an outgoing friend request. */
+  async function handleCancelFriendRequest(requestId: string) {
+    setFriendActionError(null);
+    const response = (await cancelFriendRequest(
+      { username: user.username, password: pass },
+      requestId,
+    )) as { success: true } | { error: string };
+    if ("error" in response) {
+      setFriendActionError(response.error);
+    } else {
+      setFriendStatus({ type: "none" });
     }
   }
 
@@ -146,8 +222,11 @@ export default function ViewProfile({ username }: ViewProfileProps) {
                 </button>
               )}
               {friendStatus.type === "pending_outgoing" && (
-                <button className="primary narrow friendStatusGrey" disabled>
-                  Friend request pending
+                <button
+                  className="primary narrow friendStatusGrey"
+                  onClick={() => handleCancelFriendRequest(friendStatus.requestId)}
+                >
+                  Cancel Request
                 </button>
               )}
               {friendStatus.type === "pending_incoming" && (
