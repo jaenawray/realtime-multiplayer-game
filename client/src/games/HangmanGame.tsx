@@ -1,6 +1,19 @@
-import type { HangmanMove, HangmanView } from "@gamenite/shared";
+import type { HangmanMove, HangmanView, HangmanCategory } from "@gamenite/shared";
+import { categoryConfig } from "@gamenite/shared";
 import type { GameProps } from "../util/types.ts";
 import { useState } from "react";
+
+// All available categories for the dropdown
+const ALL_CATEGORIES: HangmanCategory[] = [
+  "programming",
+  "animals",
+  "countries",
+  "movies",
+  "sports",
+  "food",
+  "science",
+  "music",
+];
 
 export default function HangmanGame({
   view,
@@ -9,15 +22,169 @@ export default function HangmanGame({
   makeMove,
 }: GameProps<HangmanView, HangmanMove>) {
   const [letterInput, setLetterInput] = useState("");
+  const [customWord, setCustomWord] = useState("");
+  const [wordError, setWordError] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<HangmanCategory | "">("");
 
-  const isMyTurn = view.currentPlayer === userPlayerIndex && !view.finished;
+  // Setup phase - word picker chooses word or uses random
+  if (view.phase === "setup") {
+    const isDesignatedPicker = userPlayerIndex === 0;
+
+    if (isDesignatedPicker) {
+      const handleSubmitWord = (e: React.FormEvent) => {
+        e.preventDefault();
+        const word = customWord.toUpperCase().trim();
+        
+        // Validate word
+        if (word.length < 3) {
+          setWordError("Word must be at least 3 letters");
+          return;
+        }
+        if (word.length > 20) {
+          setWordError("Word must be at most 20 letters");
+          return;
+        }
+        if (!/^[A-Z]+$/.test(word)) {
+          setWordError("Word must contain only letters A-Z");
+          return;
+        }
+        
+        setWordError("");
+        makeMove({ type: "submitWord", word });
+      };
+
+      const handleUseRandomWord = () => {
+        if (selectedCategory) {
+          makeMove({ type: "useRandomWord", category: selectedCategory });
+        } else {
+          makeMove({ type: "useRandomWord" });
+        }
+      };
+
+      return (
+        <div className="content">
+          <h2>Hangman - Word Picker</h2>
+          <p style={{ marginBottom: "1.5rem" }}>
+            You are the <strong>Word Picker</strong>! Choose a word for others to guess, 
+            or use a random word to play along.
+          </p>
+
+          <div style={{ 
+            background: "var(--surface-2, #f5f5f5)", 
+            padding: "1.5rem", 
+            borderRadius: "8px",
+            marginBottom: "1.5rem"
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Option 1: Pick a Custom Word</h3>
+            <form onSubmit={handleSubmitWord}>
+              <input
+                type="text"
+                value={customWord}
+                onChange={(e) => {
+                  setCustomWord(e.target.value.toUpperCase());
+                  setWordError("");
+                }}
+                placeholder="Enter a word (3-20 letters)"
+                style={{ 
+                  width: "100%", 
+                  maxWidth: "300px",
+                  padding: "0.75rem",
+                  fontSize: "1.1rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1rem"
+                }}
+              />
+              {wordError && (
+                <p style={{ color: "red", margin: "0.5rem 0" }}>{wordError}</p>
+              )}
+              <div style={{ marginTop: "1rem" }}>
+                <button type="submit" className="primary narrow">
+                  Use This Word
+                </button>
+              </div>
+              <p style={{ fontSize: "0.9rem", color: "gray", marginTop: "0.5rem" }}>
+                ⚠️ You won't be able to guess if you pick a custom word
+              </p>
+            </form>
+          </div>
+
+          <div style={{ 
+            background: "var(--surface-2, #f5f5f5)", 
+            padding: "1.5rem", 
+            borderRadius: "8px" 
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Option 2: Use a Random Word</h3>
+            <p style={{ marginBottom: "1rem" }}>
+              Let the game pick a random word so everyone (including you) can guess!
+            </p>
+            
+            <div style={{ marginBottom: "1rem" }}>
+              <label htmlFor="category-select" style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500 }}>
+                Select a Category (optional):
+              </label>
+              <select
+                id="category-select"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value as HangmanCategory | "")}
+                style={{
+                  padding: "0.75rem",
+                  fontSize: "1rem",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                  minWidth: "200px",
+                  cursor: "pointer"
+                }}
+              >
+                <option value="">🎲 Any Category</option>
+                {ALL_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {categoryConfig[cat].icon} {categoryConfig[cat].displayName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button onClick={handleUseRandomWord} className="primary narrow">
+              {selectedCategory 
+                ? `Use Random ${categoryConfig[selectedCategory].displayName} Word`
+                : "Use Random Word"}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Non-picker players wait during setup
+    return (
+      <div className="content">
+        <h2>Hangman</h2>
+        <p style={{ fontSize: "1.2rem" }}>
+          Waiting for <strong>{players[0]?.display || "the host"}</strong> to choose a word...
+        </p>
+        <p style={{ color: "gray" }}>
+          They can pick a custom word or choose a category for a random word.
+        </p>
+      </div>
+    );
+  }
+
+  // Playing phase
   const currentPlayerName =
     view.currentPlayer === userPlayerIndex ? "your" : `${players[view.currentPlayer]?.display}'s`;
+
+  // Get category display info
+  const getCategoryDisplay = () => {
+    if (view.category === "custom") {
+      return "Custom Word";
+    }
+    const config = categoryConfig[view.category as HangmanCategory];
+    return config ? `${config.icon} ${config.displayName}` : view.category;
+  };
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (letterInput.length === 1) {
-      makeMove(letterInput.toUpperCase());
+      makeMove({ type: "guess", letter: letterInput.toUpperCase() });
       setLetterInput("");
     }
   }
@@ -25,7 +192,14 @@ export default function HangmanGame({
   return (
     <div className="content">
       <h2>Hangman</h2>
-      <p>Category: {view.category}</p>
+      <p>
+        Category: <strong>{getCategoryDisplay()}</strong>
+        {view.wordPickerIndex !== null && (
+          <span style={{ marginLeft: "0.5rem", color: "gray" }}>
+            (picked by {players[view.wordPickerIndex]?.display || "player"})
+          </span>
+        )}
+      </p>
       <p style={{ fontSize: "2rem", letterSpacing: "0.5rem", fontFamily: "monospace" }}>
         {view.finished ? view.word : view.maskedWord}
       </p>
@@ -51,25 +225,40 @@ export default function HangmanGame({
 
       {!view.finished && (
         <>
-          <p>
-            It is <strong>{currentPlayerName}</strong> turn
-          </p>
-          {isMyTurn && (
-            <form onSubmit={handleSubmit} style={{ marginTop: "1rem" }}>
-              <input
-                type="text"
-                maxLength={1}
-                value={letterInput}
-                onChange={(e) => setLetterInput(e.target.value.toUpperCase())}
-                placeholder="Enter a letter"
-                style={{ width: "8rem", textAlign: "center", fontSize: "1.2rem" }}
-              />
-              <button type="submit" className="primary narrow" style={{ marginLeft: "0.5rem" }}>
-                Guess
-              </button>
-            </form>
+          {view.isWordPicker ? (
+            <p style={{ 
+              padding: "1rem", 
+              background: "var(--surface-2, #f0f0f0)", 
+              borderRadius: "8px",
+              marginTop: "1rem"
+            }}>
+              👀 You picked the word! Watch as others try to guess it.
+            </p>
+          ) : (
+            <>
+              <p>
+                It is <strong>{currentPlayerName}</strong> turn
+              </p>
+              {view.canGuess && (
+                <form onSubmit={handleSubmit} style={{ marginTop: "1rem" }}>
+                  <input
+                    type="text"
+                    maxLength={1}
+                    value={letterInput}
+                    onChange={(e) => setLetterInput(e.target.value.toUpperCase())}
+                    placeholder="Enter a letter"
+                    style={{ width: "8rem", textAlign: "center", fontSize: "1.2rem" }}
+                  />
+                  <button type="submit" className="primary narrow" style={{ marginLeft: "0.5rem" }}>
+                    Guess
+                  </button>
+                </form>
+              )}
+              {!view.canGuess && userPlayerIndex >= 0 && (
+                <p>Waiting for {currentPlayerName} turn...</p>
+              )}
+            </>
           )}
-          {!isMyTurn && userPlayerIndex >= 0 && <p>Waiting for {currentPlayerName} turn...</p>}
         </>
       )}
     </div>

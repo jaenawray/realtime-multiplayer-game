@@ -3,6 +3,8 @@ import { type GameLogic } from "./gameLogic.ts";
 import {
   type HangmanState,
   type HangmanView,
+  type HangmanMove,
+  type HangmanCategory,
   getRandomWord,
   zHangmanMove,
   MAX_WRONG_GUESSES,
@@ -32,8 +34,10 @@ function shuffleArray<T>(array: T[]): T[] {
 
 /**
  * Get the current player index from the shuffled order
+ * Returns -1 during setup phase
  */
 function getCurrentPlayer(state: HangmanState): number {
+  if (state.phase === "setup") return -1;
   return state.playerOrder[state.currentTurnIndex];
 }
 
@@ -60,15 +64,126 @@ function hangmanResult(state: Pick<HangmanState, "word" | "guessedLetters">): {
   lost: boolean;
   wrongGuesses: number;
 } {
+  if (!state.word) return { wordRevealed: false, lost: false, wrongGuesses: 0 };
   const wordRevealed = isWordRevealed(state.word, state.guessedLetters);
   const wrongGuesses = countWrongGuesses(state.word, state.guessedLetters);
   const lost = wrongGuesses >= MAX_WRONG_GUESSES;
   return { wordRevealed, lost, wrongGuesses };
 }
 
-function isHangmanFinished(state: Pick<HangmanState, "word" | "guessedLetters">): boolean {
+function isHangmanFinished(state: HangmanState): boolean {
+  if (state.phase === "setup") return false;
   const { wordRevealed, lost } = hangmanResult(state);
   return wordRevealed || lost;
+}
+
+/**
+ * Create player order excluding the word picker
+ */
+function createPlayerOrder(numPlayers: number, wordPickerIndex: number | null): number[] {
+  const allPlayers = Array.from({ length: numPlayers }, (_, i) => i);
+  const eligiblePlayers = wordPickerIndex !== null 
+    ? allPlayers.filter(i => i !== wordPickerIndex)
+    : allPlayers;
+  return shuffleArray(eligiblePlayers);
+}
+
+/**
+ * Handle word submission during setup phase
+ */
+function handleWordSubmission(
+  state: HangmanState,
+  word: string,
+  playerIndex: number
+): HangmanState | null {
+  // Only player 0 (game creator) can submit a word
+  if (playerIndex !== 0) return null;
+  if (state.phase !== "setup") return null;
+
+  // Transition to playing phase with custom word
+  return {
+    phase: "playing",
+    numPlayers: state.numPlayers,
+    word: word,
+    category: "custom",
+    guessedLetters: [],
+    playerOrder: createPlayerOrder(state.numPlayers, 0), // Exclude the picker
+    currentTurnIndex: 0,
+    wordPickerIndex: 0,
+  };
+}
+
+/**
+ * Handle using random word during setup phase
+ */
+function handleUseRandomWord(
+  state: HangmanState,
+  playerIndex: number,
+  category?: HangmanCategory
+): HangmanState | null {
+  // Only player 0 (game creator) can make this choice
+  if (playerIndex !== 0) return null;
+  if (state.phase !== "setup") return null;
+
+  // Get random word, optionally filtered by category
+  const wordEntry = getRandomWord(category);
+  // Transition to playing phase with random word (no picker)
+  return {
+    phase: "playing",
+    numPlayers: state.numPlayers,
+    word: wordEntry.word,
+    category: wordEntry.category,
+    guessedLetters: [],
+    playerOrder: createPlayerOrder(state.numPlayers, null), // Everyone plays
+    currentTurnIndex: 0,
+    wordPickerIndex: null,
+  };
+}
+
+/**
+ * Handle letter guess during playing phase
+ */
+function handleLetterGuess(
+  state: HangmanState,
+  letter: string,
+  playerIndex: number
+): HangmanState | null {
+  if (state.phase !== "playing") return null;
+
+  // No more moves after the game is finished (win or lose)
+  if (isHangmanFinished(state)) return null;
+
+  // Word picker cannot guess
+  if (playerIndex === state.wordPickerIndex) return null;
+
+  // Check if it's this player's turn
+  if (playerIndex !== getCurrentPlayer(state)) return null;
+
+  // Check if letter was already guessed
+  if (state.guessedLetters.includes(letter)) return null;
+
+  // Add letter to list of guessed letters
+  const newGuessedLetters = [...state.guessedLetters, letter];
+  const { wordRevealed, lost } = hangmanResult({
+    word: state.word,
+    guessedLetters: newGuessedLetters,
+  });
+  // Don't rotate turns after final guess
+  const moveEndsGame = wordRevealed || lost;
+  const nextTurnIndex = moveEndsGame
+    ? state.currentTurnIndex
+    : (state.currentTurnIndex + 1) % state.playerOrder.length;
+
+  return {
+    phase: "playing",
+    numPlayers: state.numPlayers,
+    word: state.word,
+    category: state.category,
+    guessedLetters: newGuessedLetters,
+    playerOrder: state.playerOrder,
+    currentTurnIndex: nextTurnIndex,
+    wordPickerIndex: state.wordPickerIndex,
+  };
 }
 
 /**
@@ -79,63 +194,74 @@ export const hangmanLogic: GameLogic<HangmanState, HangmanView> = {
   maxPlayers: 6,
 
   start: (numPlayers) => {
-    const wordEntry = getRandomWord();
-    // Create shuffled player order [0, 1, 2, ...] -> shuffled
-    const playerOrder = shuffleArray(Array.from({ length: numPlayers }, (_, i) => i));
+    // Start in setup phase - player 0 will choose whether to pick a word or use random
     return {
-      word: wordEntry.word,
-      category: wordEntry.category,
+      phase: "setup",
+      numPlayers,
+      word: "",
+      category: "custom",
       guessedLetters: [],
-      playerOrder,
+      playerOrder: [], // Will be set when word is chosen
       currentTurnIndex: 0,
+      wordPickerIndex: null,
     };
   },
 
   update: (state: HangmanState, payload: unknown, playerIndex: number): HangmanState | null => {
     // Validate move format
-    const move = zHangmanMove.safeParse(payload);
-    if (move.error) return null;
+    const moveResult = zHangmanMove.safeParse(payload);
+    if (moveResult.error) return null;
 
-    // No more moves after the game is finished (win or lose)
-    if (isHangmanFinished(state)) return null;
+    const move = moveResult.data as HangmanMove;
 
-    // Check if it's this player's turn
-    if (playerIndex !== getCurrentPlayer(state)) return null;
-
-    // Check if letter was already guessed
-    const letter = move.data;
-    if (state.guessedLetters.includes(letter)) return null;
-
-    // Add letter to list of guessed letters
-    const newGuessedLetters = [...state.guessedLetters, letter];
-    const { wordRevealed, lost } = hangmanResult({
-      word: state.word,
-      guessedLetters: newGuessedLetters,
-    });
-    // Don't rotate turns after final guess
-    const moveEndsGame = wordRevealed || lost;
-    const nextTurnIndex = moveEndsGame
-      ? state.currentTurnIndex
-      : (state.currentTurnIndex + 1) % state.playerOrder.length;
-
-    return {
-      word: state.word,
-      category: state.category,
-      guessedLetters: newGuessedLetters,
-      playerOrder: state.playerOrder,
-      currentTurnIndex: nextTurnIndex,
-    };
+    switch (move.type) {
+      case "submitWord":
+        return handleWordSubmission(state, move.word, playerIndex);
+      case "useRandomWord":
+        return handleUseRandomWord(state, playerIndex, move.category);
+      case "guess":
+        return handleLetterGuess(state, move.letter, playerIndex);
+    }
   },
 
   isDone: (state) => isHangmanFinished(state),
 
-  viewAs: (state, _playerIndex) => {
+  viewAs: (state, playerIndex) => {
+    const isWordPicker = state.wordPickerIndex === playerIndex;
+    const currentPlayer = getCurrentPlayer(state);
+    
+    // During setup, no one can guess
+    // During playing, only non-pickers on their turn can guess
+    const canGuess = state.phase === "playing" 
+      && !isWordPicker 
+      && currentPlayer === playerIndex
+      && !isHangmanFinished(state);
+
+    if (state.phase === "setup") {
+      return {
+        phase: "setup",
+        maskedWord: "",
+        category: "custom",
+        guessedLetters: [],
+        correctLetters: [],
+        wrongLetters: [],
+        wrongGuesses: 0,
+        maxWrongGuesses: MAX_WRONG_GUESSES,
+        currentPlayer: -1,
+        finished: false,
+        wordPickerIndex: null,
+        isWordPicker: playerIndex === 0, // Player 0 is the designated picker during setup
+        canGuess: false,
+      };
+    }
+
     const correctLetters = state.guessedLetters.filter((letter) => state.word.includes(letter));
     const wrongLetters = state.guessedLetters.filter((letter) => !state.word.includes(letter));
     const { wordRevealed, lost, wrongGuesses } = hangmanResult(state);
     const finished = wordRevealed || lost;
 
     return {
+      phase: "playing",
       maskedWord: maskWord(state.word, state.guessedLetters),
       category: state.category,
       guessedLetters: state.guessedLetters,
@@ -143,30 +269,48 @@ export const hangmanLogic: GameLogic<HangmanState, HangmanView> = {
       wrongLetters,
       wrongGuesses,
       maxWrongGuesses: MAX_WRONG_GUESSES,
-      currentPlayer: getCurrentPlayer(state),
+      currentPlayer,
       finished,
       result: finished ? (wordRevealed ? "win" : "lose") : undefined,
       word: finished ? state.word : undefined,
+      wordPickerIndex: state.wordPickerIndex,
+      isWordPicker,
+      canGuess,
     };
   },
 
   tagView: (view) => ({ type: "hangman", view }),
 
   describeMove: (prevState, newState, payload, _playerIndex) => {
-    const letter = zHangmanMove.parse(payload);
-    const isCorrect = prevState.word.includes(letter);
-    const { wordRevealed, lost, wrongGuesses } = hangmanResult(newState);
+    const moveResult = zHangmanMove.safeParse(payload);
+    if (moveResult.error) return " made an invalid move";
+    
+    const move = moveResult.data as HangmanMove;
 
-    if (wordRevealed) {
-      return ` guessed '${letter}' — correct! 🎉 The word was "${prevState.word}"!`;
+    switch (move.type) {
+      case "submitWord":
+        return ` set a custom word (${move.word.length} letters)`;
+      case "useRandomWord":
+        return move.category 
+          ? ` chose a random ${move.category} word`
+          : ` chose to use a random word`;
+      case "guess": {
+        const letter = move.letter;
+        const isCorrect = prevState.word.includes(letter);
+        const { wordRevealed, lost, wrongGuesses } = hangmanResult(newState);
+
+        if (wordRevealed) {
+          return ` guessed '${letter}' — correct! 🎉 The word was "${prevState.word}"!`;
+        }
+        if (lost) {
+          return ` guessed '${letter}' — wrong! 💀 Game over! The word was "${prevState.word}"`;
+        }
+        if (isCorrect) {
+          return ` guessed '${letter}' — correct!`;
+        }
+        return ` guessed '${letter}' — wrong! (${wrongGuesses}/${MAX_WRONG_GUESSES})`;
+      }
     }
-    if (lost) {
-      return ` guessed '${letter}' — wrong! 💀 Game over! The word was "${prevState.word}"`;
-    }
-    if (isCorrect) {
-      return ` guessed '${letter}' — correct!`;
-    }
-    return ` guessed '${letter}' — wrong! (${wrongGuesses}/${MAX_WRONG_GUESSES})`;
   },
 };
 

@@ -3,6 +3,8 @@
   padding-right: 0;
   display: grid;
   grid-template-rows: max-content 1fr;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .gameRoster {
@@ -19,6 +21,8 @@
   border: 1px solid black;
   border-radius: 0.5rem;
   margin-top: 0.5rem;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .gameFrame.waiting {
