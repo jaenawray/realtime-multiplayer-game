@@ -93,7 +93,10 @@ export interface HangmanView {
  */
 export const zHangmanLetterGuess = z.object({
   type: z.literal("guess"),
-  letter: z.string().length(1).regex(/^[A-Z]$/, "Must be a single uppercase letter A-Z"),
+  letter: z
+    .string()
+    .length(1)
+    .regex(/^[A-Z]$/, "Must be a single uppercase letter A-Z"),
 });
 export type HangmanLetterGuess = z.infer<typeof zHangmanLetterGuess>;
 
@@ -124,5 +127,9 @@ export type HangmanUseRandomWord = z.infer<typeof zHangmanUseRandomWord>;
 /**
  * All possible moves in Hangman.
  */
-export const zHangmanMove = z.union([zHangmanLetterGuess, zHangmanWordSubmission, zHangmanUseRandomWord]);
+export const zHangmanMove = z.union([
+  zHangmanLetterGuess,
+  zHangmanWordSubmission,
+  zHangmanUseRandomWord,
+]);
 export type HangmanMove = z.infer<typeof zHangmanMove>;

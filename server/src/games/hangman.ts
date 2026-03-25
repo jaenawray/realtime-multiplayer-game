@@ -3,7 +3,6 @@ import { type GameLogic } from "./gameLogic.ts";
 import {
   type HangmanState,
   type HangmanView,
-  type HangmanMove,
   type HangmanCategory,
   getRandomWord,
   zHangmanMove,
@@ -82,9 +81,8 @@ function isHangmanFinished(state: HangmanState): boolean {
  */
 function createPlayerOrder(numPlayers: number, wordPickerIndex: number | null): number[] {
   const allPlayers = Array.from({ length: numPlayers }, (_, i) => i);
-  const eligiblePlayers = wordPickerIndex !== null 
-    ? allPlayers.filter(i => i !== wordPickerIndex)
-    : allPlayers;
+  const eligiblePlayers =
+    wordPickerIndex !== null ? allPlayers.filter((i) => i !== wordPickerIndex) : allPlayers;
   return shuffleArray(eligiblePlayers);
 }
 
@@ -94,7 +92,7 @@ function createPlayerOrder(numPlayers: number, wordPickerIndex: number | null): 
 function handleWordSubmission(
   state: HangmanState,
   word: string,
-  playerIndex: number
+  playerIndex: number,
 ): HangmanState | null {
   // Only player 0 (game creator) can submit a word
   if (playerIndex !== 0) return null;
@@ -119,7 +117,7 @@ function handleWordSubmission(
 function handleUseRandomWord(
   state: HangmanState,
   playerIndex: number,
-  category?: HangmanCategory
+  category?: HangmanCategory,
 ): HangmanState | null {
   // Only player 0 (game creator) can make this choice
   if (playerIndex !== 0) return null;
@@ -146,7 +144,7 @@ function handleUseRandomWord(
 function handleLetterGuess(
   state: HangmanState,
   letter: string,
-  playerIndex: number
+  playerIndex: number,
 ): HangmanState | null {
   if (state.phase !== "playing") return null;
 
@@ -212,7 +210,7 @@ export const hangmanLogic: GameLogic<HangmanState, HangmanView> = {
     const moveResult = zHangmanMove.safeParse(payload);
     if (moveResult.error) return null;
 
-    const move = moveResult.data as HangmanMove;
+    const move = moveResult.data;
 
     switch (move.type) {
       case "submitWord":
@@ -229,13 +227,14 @@ export const hangmanLogic: GameLogic<HangmanState, HangmanView> = {
   viewAs: (state, playerIndex) => {
     const isWordPicker = state.wordPickerIndex === playerIndex;
     const currentPlayer = getCurrentPlayer(state);
-    
+
     // During setup, no one can guess
     // During playing, only non-pickers on their turn can guess
-    const canGuess = state.phase === "playing" 
-      && !isWordPicker 
-      && currentPlayer === playerIndex
-      && !isHangmanFinished(state);
+    const canGuess =
+      state.phase === "playing" &&
+      !isWordPicker &&
+      currentPlayer === playerIndex &&
+      !isHangmanFinished(state);
 
     if (state.phase === "setup") {
       return {
@@ -284,14 +283,14 @@ export const hangmanLogic: GameLogic<HangmanState, HangmanView> = {
   describeMove: (prevState, newState, payload, _playerIndex) => {
     const moveResult = zHangmanMove.safeParse(payload);
     if (moveResult.error) return " made an invalid move";
-    
-    const move = moveResult.data as HangmanMove;
+
+    const move = moveResult.data;
 
     switch (move.type) {
       case "submitWord":
         return ` set a custom word (${move.word.length} letters)`;
       case "useRandomWord":
-        return move.category 
+        return move.category
           ? ` chose a random ${move.category} word`
           : ` chose to use a random word`;
       case "guess": {
