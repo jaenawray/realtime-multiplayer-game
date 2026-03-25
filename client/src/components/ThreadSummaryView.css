@@ -3,6 +3,7 @@
   flex-direction: row;
   border-top: 1px dashed black;
   color: var(--gray-foreground);
+  align-items: center;
 }
 
 .threadSummary div {
@@ -19,4 +20,10 @@
 .threadSummary .mid {
   flex-grow: 1;
   color: cornflowerblue;
+}
+
+.threadSummary .lastActivity {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }

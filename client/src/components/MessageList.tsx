@@ -4,6 +4,7 @@ import type { ChatMessage } from "../util/types.ts";
 import { useEffect, useRef } from "react";
 import useTimeSince from "../hooks/useTimeSince.ts";
 import UserLink from "./UserLink.tsx";
+import ProfilePictureDisplay from "./ProfilePictureDisplay.tsx";
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -26,6 +27,11 @@ export default function MessageList({ messages }: MessageListProps) {
             if (message.meta === "move") {
               return (
                 <div key={message.messageId} className="chatMoveLog">
+                  <ProfilePictureDisplay
+                    avatarUrl={message.user.avatar}
+                    displayName={message.user.display}
+                    size="tiny"
+                  />
                   <UserLink user={message.user} />
                   {message.moveDescription}
                 </div>
@@ -33,6 +39,11 @@ export default function MessageList({ messages }: MessageListProps) {
             }
             return (
               <div key={message.messageId} className="chatMeta">
+                <ProfilePictureDisplay
+                  avatarUrl={message.user.avatar}
+                  displayName={message.user.display}
+                  size="tiny"
+                />
                 <UserLink user={message.user} /> {message.meta}
                 {" chat "}
                 {timeSince(message.dateTime)}
@@ -49,10 +60,17 @@ export default function MessageList({ messages }: MessageListProps) {
           }
           return (
             <div key={message.messageId} className="chatOther">
-              <div className="chatSender">
-                <UserLink user={message.createdBy} /> {timeSince(message.createdAt)}
+              <ProfilePictureDisplay
+                avatarUrl={message.createdBy.avatar}
+                displayName={message.createdBy.display}
+                size="small"
+              />
+              <div className="chatOtherContent">
+                <div className="chatSender">
+                  <UserLink user={message.createdBy} /> {timeSince(message.createdAt)}
+                </div>
+                <div className="chatContent">{message.text}</div>
               </div>
-              <div className="chatContent">{message.text}</div>
             </div>
           );
         })}

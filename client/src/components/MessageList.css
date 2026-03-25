@@ -11,13 +11,19 @@ div.chatScroller {
 }
 
 div.chatScroller .chatMeta {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   font-size: 0.75rem;
   color: var(--gray-foreground);
 }
 
 div.chatScroller .chatMoveLog {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--primary-foreground, #1a5276);
@@ -53,4 +59,15 @@ div.chatScroller .chatMe .chatContent {
   margin-right: 0;
   margin-left: auto;
   background-color: oklch(0.9 0.05 260);
+}
+
+div.chatScroller .chatOther {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+div.chatScroller .chatOtherContent {
+  flex: 1;
+  min-width: 0;
 }

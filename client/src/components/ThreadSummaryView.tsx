@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import type { ThreadSummary } from "@gamenite/shared";
 import useTimeSince from "../hooks/useTimeSince.ts";
 import UserLink from "./UserLink.tsx";
+import ProfilePictureDisplay from "./ProfilePictureDisplay.tsx";
 
 /**
  * Summarizes information for a single thread as part of a list of threads
@@ -26,6 +27,11 @@ export default function ThreadSummaryView({
         {title}
       </NavLink>
       <div className="lastActivity">
+        <ProfilePictureDisplay
+          avatarUrl={createdBy.avatar}
+          displayName={createdBy.display}
+          size="tiny"
+        />
         <UserLink user={createdBy} capitalize /> posted {timeSince(createdAt)}
       </div>
     </div>

@@ -18,6 +18,7 @@ export async function populateSafeUserInfo(userId: string): Promise<SafeUserInfo
     createdAt: new Date(record.createdAt),
     avatar: record.avatar,
     bio: record.bio,
+    profileVisibility: record.profileVisibility ?? "public",
   });
 }
 
@@ -80,7 +81,7 @@ export async function getUsersByUsername(usernames: string[]): Promise<SafeUserI
  */
 export async function updateUser(
   username: string,
-  { display, password, avatar, bio }: UserUpdateRequest,
+  { display, password, avatar, bio, profileVisibility }: UserUpdateRequest,
 ): Promise<SafeUserInfo> {
   const user = await getUserByUsername(username);
   if (!user) throw new Error(`No user ${username}`);
@@ -89,6 +90,7 @@ export async function updateUser(
   if (display !== undefined) newUser.display = display;
   if (avatar !== undefined) newUser.avatar = avatar;
   if (bio !== undefined) newUser.bio = bio;
+  if (profileVisibility !== undefined) newUser.profileVisibility = profileVisibility;
   await UserRepo.set(user.userId, newUser);
   return populateSafeUserInfo(user.userId);
 }

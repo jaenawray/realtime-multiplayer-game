@@ -31,6 +31,8 @@ export default function UpdateProfile() {
     bio,
     setBio,
     bioMaxLength,
+    profileVisibility,
+    setProfileVisibility,
     err,
     handleSubmit,
   } = useEditProfileForm();
@@ -152,6 +154,27 @@ export default function UpdateProfile() {
             </button>
           </div>
         </div>
+      </div>
+      <hr />
+      <div className="spacedSection">
+        <h3>Profile visibility</h3>
+        <p className="smallAndGray" style={{ marginBottom: "0.5rem" }}>
+          Control who can see your profile details (bio, avatar, etc.)
+        </p>
+        <select
+          className="notTooWide"
+          value={profileVisibility as string}
+          onChange={(e) => {
+            const value = e.target.value as "public" | "friends-only";
+            if (value === "public" || value === "friends-only") {
+              (setProfileVisibility as (v: "public" | "friends-only") => void)(value);
+            }
+          }}
+          style={{ padding: "0.5rem", fontSize: "1rem" }}
+        >
+          <option value="public">Public - Anyone can view</option>
+          <option value="friends-only">Friends only - Only friends can view</option>
+        </select>
       </div>
       <hr />
       <div className="spacedSection">

@@ -99,6 +99,11 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       return <div>Loading...</div>;
     case "profile": {
       const profileUser = componentState.user;
+      // Check if profile is visible: public profiles always visible, friends-only requires being friends
+      const isPublic = profileUser.profileVisibility !== "friends-only";
+      const isFriend = friendStatus.type === "friends";
+      const canViewPrivateInfo = isPublic || isFriend;
+
       return (
         <div className="content">
           <div className="spacedSection">
@@ -106,23 +111,36 @@ export default function ViewProfile({ username }: ViewProfileProps) {
             <div
               style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}
             >
-              <ProfilePictureDisplay
-                avatarUrl={profileUser.avatar}
-                displayName={profileUser.display}
-                size="medium"
-              />
+              {canViewPrivateInfo ? (
+                <ProfilePictureDisplay
+                  avatarUrl={profileUser.avatar}
+                  displayName={profileUser.display}
+                  size="medium"
+                />
+              ) : (
+                <ProfilePictureDisplay
+                  avatarUrl={undefined}
+                  displayName={profileUser.display}
+                  size="medium"
+                />
+              )}
               <div>
                 <ul>
                   <li>Username: {profileUser.username}</li>
                   <li>Account created {timeSince(profileUser.createdAt)}</li>
                 </ul>
-                {profileUser.bio && (
+                {canViewPrivateInfo && profileUser.bio && (
                   <div style={{ marginTop: "0.5rem" }}>
                     <strong>Bio</strong>
                     <p style={{ whiteSpace: "pre-wrap", margin: "0.25rem 0 0 0" }}>
                       {profileUser.bio}
                     </p>
                   </div>
+                )}
+                {!canViewPrivateInfo && (
+                  <p className="smallAndGray" style={{ marginTop: "0.5rem", fontStyle: "italic" }}>
+                    This profile is set to friends-only. Add them as a friend to see more details.
+                  </p>
                 )}
               </div>
             </div>
