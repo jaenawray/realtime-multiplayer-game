@@ -7,6 +7,7 @@ import {
   cancelFriendRequest,
   declineFriendRequest,
   getFriendStatus,
+  getOutgoingPendingFriendRequests,
   getPendingFriendRequests,
   sendFriendRequest,
   getFriendsList,
@@ -62,6 +63,26 @@ export const getFriendRequests: RestAPI<FriendRequestInfo[]> = async (req, res) 
   }
 
   const requests = await getPendingFriendRequests(user.username);
+  res.send(requests);
+};
+
+/**
+ * Get outgoing pending friend requests for current user.
+ */
+export const getOutgoingFriendRequests: RestAPI<FriendRequestInfo[]> = async (req, res) => {
+  const body = z.object({ auth: zUserAuth }).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const requests = await getOutgoingPendingFriendRequests(user.username);
   res.send(requests);
 };
 

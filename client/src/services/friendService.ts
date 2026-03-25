@@ -52,6 +52,22 @@ export const getPendingFriendRequests = async (
 };
 
 /**
+ * Get outgoing pending friend requests for the current user.
+ */
+export const getOutgoingPendingFriendRequests = async (
+  auth: UserAuth,
+): APIResponse<FriendRequestInfo[]> => {
+  try {
+    const res = await api.post<FriendRequestInfo[]>(`${USER_API_URL}/outgoing-friend-requests`, {
+      auth,
+    });
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
+/**
  * Accept a friend request.
  */
 export const acceptFriendRequest = async (

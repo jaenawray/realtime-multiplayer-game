@@ -45,6 +45,7 @@ app.use(
         .post("/signup", user.postSignup)
         .post("/friend-request", friend.postFriendRequest(io))
         .post("/friend-requests", friend.getFriendRequests)
+        .post("/outgoing-friend-requests", friend.getOutgoingFriendRequests)
         .post("/friend-request/:requestId/accept", friend.postAcceptFriendRequest(io))
         .post("/friend-request/:requestId/decline", friend.postDeclineFriendRequest(io))
         .delete("/friend-request/:requestId", friend.deleteFriendRequest(io))

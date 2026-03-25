@@ -7,9 +7,12 @@ import FriendsList from "../components/FriendsList";
 import AvatarGallery from "../components/AvatarGallery";
 import {
   acceptFriendRequest,
+  cancelFriendRequest,
   declineFriendRequest,
+  getOutgoingPendingFriendRequests,
   getPendingFriendRequests,
 } from "../services/friendService";
+import usePendingRequestNotification from "../hooks/usePendingRequestNotification.ts";
 
 /**
  * User's own profile page: edit display name, password, and manage friend requests.
@@ -17,6 +20,7 @@ import {
  */
 export default function UpdateProfile() {
   const { user, pass, socket } = useLoginContext();
+  const { markAllRead } = usePendingRequestNotification();
   const timeSince = useTimeSince();
   const [showPass, setShowPass] = useState(false);
   const {
@@ -36,12 +40,17 @@ export default function UpdateProfile() {
   } = useEditProfileForm();
 
   const [pendingRequests, setPendingRequests] = useState<FriendRequestInfo[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<FriendRequestInfo[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
+  const [outgoingRequestsLoading, setOutgoingRequestsLoading] = useState(true);
   const [requestActionError, setRequestActionError] = useState<string | null>(null);
+  const fetchOutgoingPendingRequests = getOutgoingPendingFriendRequests as (auth: {
+    username: string;
+    password: string;
+  }) => Promise<FriendRequestInfo[] | { error: string }>;
 
   useEffect(() => {
     let cancel = false;
-    // Show loading state after this effect runs (avoids linter warning)
     queueMicrotask(() => setRequestsLoading(true));
 
     getPendingFriendRequests({ username: user.username, password: pass })
@@ -65,11 +74,43 @@ export default function UpdateProfile() {
     };
   }, [user.username, pass]);
 
+  useEffect(() => {
+    let cancel = false;
+    queueMicrotask(() => setOutgoingRequestsLoading(true));
+
+    fetchOutgoingPendingRequests({ username: user.username, password: pass })
+      .then((response) => {
+        if (cancel) return;
+        setOutgoingRequestsLoading(false);
+        if ("error" in response) {
+          setRequestActionError(response.error);
+        } else {
+          setOutgoingRequests(response);
+        }
+      })
+      .catch((err) => {
+        if (cancel) return;
+        setOutgoingRequestsLoading(false);
+        setRequestActionError(`${err}`);
+      });
+
+    return () => {
+      cancel = true;
+    };
+  }, [user.username, pass, fetchOutgoingPendingRequests]);
+
+  useEffect(() => {
+    markAllRead();
+  }, [markAllRead]);
+
   // Real-time pending request updates
   useEffect(() => {
     const handleReceived = (payload: FriendRequestInfo) => {
       if (payload.toUser.username === user.username) {
         setPendingRequests((prev) => [payload, ...prev]);
+      }
+      if (payload.fromUser.username === user.username) {
+        setOutgoingRequests((prev) => [payload, ...prev]);
       }
     };
 
@@ -81,11 +122,17 @@ export default function UpdateProfile() {
       if (payload.toUsername === user.username) {
         setPendingRequests((prev) => prev.filter((r) => r.requestId !== payload.requestId));
       }
+      if (payload.fromUsername === user.username) {
+        setOutgoingRequests((prev) => prev.filter((r) => r.requestId !== payload.requestId));
+      }
     };
 
     const handleAccepted = (payload: FriendRequestInfo) => {
       if (payload.toUser.username === user.username) {
         setPendingRequests((prev) => prev.filter((r) => r.requestId !== payload.requestId));
+      }
+      if (payload.fromUser.username === user.username) {
+        setOutgoingRequests((prev) => prev.filter((r) => r.requestId !== payload.requestId));
       }
     };
 
@@ -96,6 +143,9 @@ export default function UpdateProfile() {
     }) => {
       if (payload.toUsername === user.username) {
         setPendingRequests((prev) => prev.filter((r) => r.requestId !== payload.requestId));
+      }
+      if (payload.fromUsername === user.username) {
+        setOutgoingRequests((prev) => prev.filter((r) => r.requestId !== payload.requestId));
       }
     };
 
@@ -150,6 +200,25 @@ export default function UpdateProfile() {
       }
     } else {
       setPendingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+    }
+  }
+
+  async function handleCancelOutgoing(requestId: string) {
+    setRequestActionError(null);
+    const response = (await cancelFriendRequest(
+      { username: user.username, password: pass },
+      requestId,
+    )) as { success: true } | { error: string };
+
+    if ("error" in response) {
+      if (staleRequestErrors.includes(response.error)) {
+        setOutgoingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+        setRequestActionError("This request is no longer available.");
+      } else {
+        setRequestActionError(response.error);
+      }
+    } else {
+      setOutgoingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
     }
   }
 
@@ -288,6 +357,29 @@ export default function UpdateProfile() {
                 </button>{" "}
                 <button className="decline narrow" onClick={() => handleDecline(req.requestId)}>
                   Decline
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <hr />
+      <div className="spacedSection">
+        <h3>Outgoing friend requests</h3>
+        {outgoingRequestsLoading && <p>Loading...</p>}
+        {!outgoingRequestsLoading && outgoingRequests.length === 0 && (
+          <p className="smallAndGray">No outgoing pending requests</p>
+        )}
+        {!outgoingRequestsLoading && outgoingRequests.length > 0 && (
+          <ul>
+            {outgoingRequests.map((req) => (
+              <li key={req.requestId} style={{ marginBottom: "0.5rem" }}>
+                <strong>{req.toUser.display}</strong> ({req.toUser.username}){" "}
+                <button
+                  className="decline narrow"
+                  onClick={() => handleCancelOutgoing(req.requestId)}
+                >
+                  Cancel
                 </button>
               </li>
             ))}

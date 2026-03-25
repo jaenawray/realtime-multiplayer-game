@@ -2,6 +2,8 @@ import "./SideBarNav.css";
 import { useState } from "react";
 import { NavLink, type NavLinkRenderProps } from "react-router-dom";
 import useAuth from "../hooks/useAuth.ts";
+import usePendingRequestNotification from "../hooks/usePendingRequestNotification.ts";
+import NotificationBadge from "./NotificationBadge.tsx";
 
 /**
  * The SideBarNav component contains the primary naviagation menu. It
@@ -11,6 +13,7 @@ import useAuth from "../hooks/useAuth.ts";
 export default function SideBarNav() {
   const [showOptions, setShowOptions] = useState<boolean>(false);
   const { username } = useAuth();
+  const { unreadCount, markAllRead } = usePendingRequestNotification();
 
   const toggleOptions = () => {
     setShowOptions(!showOptions);
@@ -34,9 +37,13 @@ export default function SideBarNav() {
         to={`/profile/${username}`}
         id="menu_user"
         className={navClass}
-        onClick={toggleOptions}
+        onClick={() => {
+          toggleOptions();
+          markAllRead();
+        }}
       >
         Profile
+        <NotificationBadge count={unreadCount} />
       </NavLink>
     </div>
   );

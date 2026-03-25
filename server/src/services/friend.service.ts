@@ -99,6 +99,41 @@ export async function getPendingFriendRequests(username: string): Promise<Friend
 }
 
 /**
+ * Get all outgoing pending friend requests for a user.
+ *
+ * @param username - The user whose outgoing requests to fetch
+ * @returns Sorted by most recent first
+ */
+export async function getOutgoingPendingFriendRequests(
+  username: string,
+): Promise<FriendRequestInfo[]> {
+  const user = await getUserByUsername(username);
+  if (!user) return [];
+
+  const allKeys = await FriendRequestRepo.getAllKeys();
+  const results: FriendRequestInfo[] = [];
+
+  for (const key of allKeys) {
+    const req = await FriendRequestRepo.get(key);
+    if (req.fromUserId === user.userId && req.status === "pending") {
+      const [fromUserInfo, toUserInfo] = await Promise.all([
+        populateSafeUserInfo(req.fromUserId),
+        populateSafeUserInfo(req.toUserId),
+      ]);
+      results.push({
+        requestId: key,
+        fromUser: fromUserInfo,
+        toUser: toUserInfo,
+        status: req.status,
+        createdAt: new Date(req.createdAt),
+      });
+    }
+  }
+
+  return results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+/**
  * Accept a friend request. Only the recipient can accept.
  *
  * @param requestId - The friend request ID
