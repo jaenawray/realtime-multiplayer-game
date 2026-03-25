@@ -7,8 +7,10 @@ import * as http from "node:http";
 import * as chat from "./controllers/chat.controller.ts";
 import * as friend from "./controllers/friend.controller.ts";
 import * as game from "./controllers/game.controller.ts";
+import * as presence from "./controllers/presence.controller.ts";
 import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
+import { unregisterSocket } from "./services/presence.service.ts";
 import { type GameServer } from "./types.ts";
 
 export const app = express();
@@ -62,6 +64,7 @@ io.on("connection", (socket) => {
   console.log(`CONN [${socketId}] connected`);
 
   socket.on("disconnect", () => {
+    unregisterSocket(io, socketId);
     console.log(`CONN [${socketId}] disconnected`);
   });
 
@@ -73,6 +76,9 @@ io.on("connection", (socket) => {
   socket.on("gameMakeMove", game.socketMakeMove(socket, io));
   socket.on("gameStart", game.socketStart(socket, io));
   socket.on("gameWatch", game.socketWatch(socket, io));
+
+  socket.on("presenceRegister", presence.socketPresenceRegister(socket, io));
+  socket.on("presenceUnregister", presence.socketPresenceUnregister(socket, io));
 
   socket.onAny((name, payload) => {
     const zPayload = z.object({ auth: z.object({ username: z.string() }), payload: z.any() });

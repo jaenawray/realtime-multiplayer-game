@@ -13,6 +13,7 @@ import {
   getPendingFriendRequests,
 } from "../services/friendService";
 import usePendingRequestNotification from "../hooks/usePendingRequestNotification.ts";
+import UserPresenceIndicator from "../components/UserPresenceIndicator.tsx";
 
 /**
  * User's own profile page: edit display name, password, and manage friend requests.
@@ -350,11 +351,22 @@ export default function UpdateProfile() {
         {!requestsLoading && pendingRequests.length > 0 && (
           <ul>
             {pendingRequests.map((req) => (
-              <li key={req.requestId} style={{ marginBottom: "0.5rem" }}>
-                <strong>{req.fromUser.display}</strong> ({req.fromUser.username}){" "}
+              <li
+                key={req.requestId}
+                style={{
+                  marginBottom: "0.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                <strong>{req.fromUser.display}</strong>
+                <span className="smallAndGray">({req.fromUser.username})</span>
+                <UserPresenceIndicator user={req.fromUser} />
                 <button className="accept narrow" onClick={() => handleAccept(req.requestId)}>
                   Accept
-                </button>{" "}
+                </button>
                 <button className="decline narrow" onClick={() => handleDecline(req.requestId)}>
                   Decline
                 </button>
@@ -373,8 +385,19 @@ export default function UpdateProfile() {
         {!outgoingRequestsLoading && outgoingRequests.length > 0 && (
           <ul>
             {outgoingRequests.map((req) => (
-              <li key={req.requestId} style={{ marginBottom: "0.5rem" }}>
-                <strong>{req.toUser.display}</strong> ({req.toUser.username}){" "}
+              <li
+                key={req.requestId}
+                style={{
+                  marginBottom: "0.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                <strong>{req.toUser.display}</strong>
+                <span className="smallAndGray">({req.toUser.username})</span>
+                <UserPresenceIndicator user={req.toUser} />
                 <button
                   className="decline narrow"
                   onClick={() => handleCancelOutgoing(req.requestId)}

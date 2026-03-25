@@ -6,6 +6,7 @@ import useTimeSince from "../hooks/useTimeSince";
 import { cancelFriendRequest, getFriendStatus, sendFriendRequest } from "../services/friendService";
 import { getUserById } from "../services/userService";
 import ProfilePictureDisplay from "../components/ProfilePictureDisplay";
+import UserPresenceIndicator from "../components/UserPresenceIndicator.tsx";
 
 interface ViewProfileProps {
   username: string;
@@ -178,7 +179,17 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       return (
         <div className="content">
           <div className="spacedSection">
-            <h2>Profile for {profileUser.display}</h2>
+            <h2
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                flexWrap: "wrap",
+              }}
+            >
+              Profile for {profileUser.display}
+              <UserPresenceIndicator user={profileUser} />
+            </h2>
             <div
               style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}
             >

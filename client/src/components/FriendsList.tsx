@@ -3,6 +3,8 @@ import type { FriendRequestInfo } from "../../../shared/src/friend.types.ts";
 import { useEffect, useState } from "react";
 import useLoginContext from "../hooks/useLoginContext";
 import { getFriendsList, removeFriend } from "../services/friendService";
+import UserLink from "./UserLink.tsx";
+import UserPresenceIndicator from "./UserPresenceIndicator.tsx";
 
 interface FriendsListProps {
   auth: UserAuth;
@@ -92,8 +94,19 @@ export default function FriendsList({ auth, canModify = false }: FriendsListProp
       {!loading && friends.length > 0 && (
         <ul>
           {friends.map((friend) => (
-            <li key={friend.username} style={{ marginBottom: "0.5rem" }}>
-              <strong>{friend.display}</strong> ({friend.username})
+            <li
+              key={friend.username}
+              style={{
+                marginBottom: "0.5rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                flexWrap: "wrap",
+              }}
+            >
+              <UserLink user={friend} />
+              <span className="smallAndGray">({friend.username})</span>
+              <UserPresenceIndicator user={friend} />
               {canModify && (
                 <>
                   {" "}
