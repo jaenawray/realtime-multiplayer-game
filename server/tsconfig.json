@@ -12,11 +12,19 @@
     "noEmit": true,
     "verbatimModuleSyntax": true,
 
+    /* Monorepo: resolve @gamenite/shared for IDE + ESLint (typescript-eslint projectService) */
+    "baseUrl": ".",
+    "paths": {
+      "@gamenite/shared": ["../shared/src/index.ts"],
+      "@gamenite/shared/*": ["../shared/src/*"]
+    },
+
     /* Linting */
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "noUncheckedSideEffectImports": true
-  }
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"]
 }

@@ -6,7 +6,7 @@ import {
   getRandomWord,
   zHangmanMove,
   MAX_WRONG_GUESSES,
-} from "@gamenite/shared";
+} from "../../../shared/src/index.ts";
 
 /**
  * Mask the word by replacing unguessed letters with underscores
@@ -52,6 +52,26 @@ function countWrongGuesses(word: string, guessedLetters: string[]): number {
 }
 
 /**
+ * Win: every letter of the given word was guessed
+ * Lose: number of wrong guesses reached the limit (6)
+ */
+function hangmanResult(state: Pick<HangmanState, "word" | "guessedLetters">): {
+  wordRevealed: boolean;
+  lost: boolean;
+  wrongGuesses: number;
+} {
+  const wordRevealed = isWordRevealed(state.word, state.guessedLetters);
+  const wrongGuesses = countWrongGuesses(state.word, state.guessedLetters);
+  const lost = wrongGuesses >= MAX_WRONG_GUESSES;
+  return { wordRevealed, lost, wrongGuesses };
+}
+
+function isHangmanFinished(state: Pick<HangmanState, "word" | "guessedLetters">): boolean {
+  const { wordRevealed, lost } = hangmanResult(state);
+  return wordRevealed || lost;
+}
+
+/**
  * Hangman game logic
  */
 export const hangmanLogic: GameLogic<HangmanState, HangmanView> = {
@@ -71,10 +91,13 @@ export const hangmanLogic: GameLogic<HangmanState, HangmanView> = {
     };
   },
 
-  update: (state, payload, playerIndex) => {
+  update: (state: HangmanState, payload: unknown, playerIndex: number): HangmanState | null => {
     // Validate move format
     const move = zHangmanMove.safeParse(payload);
     if (move.error) return null;
+
+    // No more moves after the game is finished (win or lose)
+    if (isHangmanFinished(state)) return null;
 
     // Check if it's this player's turn
     if (playerIndex !== getCurrentPlayer(state)) return null;
@@ -83,28 +106,33 @@ export const hangmanLogic: GameLogic<HangmanState, HangmanView> = {
     const letter = move.data;
     if (state.guessedLetters.includes(letter)) return null;
 
-    // Add letter to guessed letters and advance turn
+    // Add letter to list of guessed letters
     const newGuessedLetters = [...state.guessedLetters, letter];
-    const nextTurnIndex = (state.currentTurnIndex + 1) % state.playerOrder.length;
+    const { wordRevealed, lost } = hangmanResult({
+      word: state.word,
+      guessedLetters: newGuessedLetters,
+    });
+    // Don't rotate turns after final guess
+    const moveEndsGame = wordRevealed || lost;
+    const nextTurnIndex = moveEndsGame
+      ? state.currentTurnIndex
+      : (state.currentTurnIndex + 1) % state.playerOrder.length;
 
     return {
-      ...state,
+      word: state.word,
+      category: state.category,
       guessedLetters: newGuessedLetters,
+      playerOrder: state.playerOrder,
       currentTurnIndex: nextTurnIndex,
     };
   },
 
-  isDone: (state) => {
-    const wrongGuesses = countWrongGuesses(state.word, state.guessedLetters);
-    return isWordRevealed(state.word, state.guessedLetters) || wrongGuesses >= MAX_WRONG_GUESSES;
-  },
+  isDone: (state) => isHangmanFinished(state),
 
   viewAs: (state, _playerIndex) => {
     const correctLetters = state.guessedLetters.filter((letter) => state.word.includes(letter));
     const wrongLetters = state.guessedLetters.filter((letter) => !state.word.includes(letter));
-    const wrongGuesses = wrongLetters.length;
-    const wordRevealed = isWordRevealed(state.word, state.guessedLetters);
-    const lost = wrongGuesses >= MAX_WRONG_GUESSES;
+    const { wordRevealed, lost, wrongGuesses } = hangmanResult(state);
     const finished = wordRevealed || lost;
 
     return {
@@ -127,13 +155,12 @@ export const hangmanLogic: GameLogic<HangmanState, HangmanView> = {
   describeMove: (prevState, newState, payload, _playerIndex) => {
     const letter = zHangmanMove.parse(payload);
     const isCorrect = prevState.word.includes(letter);
-    const wrongGuesses = countWrongGuesses(newState.word, newState.guessedLetters);
-    const wordRevealed = isWordRevealed(newState.word, newState.guessedLetters);
+    const { wordRevealed, lost, wrongGuesses } = hangmanResult(newState);
 
     if (wordRevealed) {
       return ` guessed '${letter}' — correct! 🎉 The word was "${prevState.word}"!`;
     }
-    if (wrongGuesses >= MAX_WRONG_GUESSES) {
+    if (lost) {
       return ` guessed '${letter}' — wrong! 💀 Game over! The word was "${prevState.word}"`;
     }
     if (isCorrect) {
