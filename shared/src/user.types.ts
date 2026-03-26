@@ -8,6 +8,7 @@ import { z } from "zod";
  * - `createdAt`: when this when the user registered.
  * - `avatar`: URL to the user's profile picture, or undefined for default avatar
  * - `bio`: User's bio text (max 500 characters), or undefined if not set
+ * - `isOnline`: present on some API responses when the server tracks WebSocket presence
  */
 export interface SafeUserInfo {
   username: string;
@@ -15,6 +16,7 @@ export interface SafeUserInfo {
   createdAt: Date;
   avatar?: string;
   bio?: string;
+  isOnline?: boolean;
 }
 
 /*** TYPES USED IN THE USER API ***/

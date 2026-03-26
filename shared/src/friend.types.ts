@@ -1,6 +1,17 @@
 import type { SafeUserInfo } from "./user.types.ts";
 
 /**
+ * Relationship + block state between the viewer and another user's profile
+ */
+export type FriendProfileStatus =
+  | { status: "none" }
+  | { status: "pending_outgoing"; requestId: string }
+  | { status: "pending_incoming" }
+  | { status: "friends" }
+  | { status: "blocked_by_them" }
+  | { status: "blocked_by_you" };
+
+/**
  * A friend request as returned to the client.
  * - `requestId`: database key
  * - `fromUser`: the user who sent the request

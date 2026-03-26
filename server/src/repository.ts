@@ -1,6 +1,7 @@
 import { createRepo } from "./keyv.ts";
 import type {
   AuthRecord,
+  BlockRecord,
   ChatRecord,
   CommentRecord,
   FriendRequestRecord,
@@ -11,6 +12,7 @@ import type {
 } from "./models.ts";
 
 export const AuthRepo = createRepo<AuthRecord>("auth");
+export const BlockRepo = createRepo<BlockRecord>("block");
 export const ChatRepo = createRepo<ChatRecord>("chat");
 export const CommentRepo = createRepo<CommentRecord>("comment");
 export const FriendRequestRepo = createRepo<FriendRequestRecord>("friendRequest");

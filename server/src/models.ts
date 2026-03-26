@@ -143,3 +143,12 @@ export interface FriendRequestRecord {
   status: FriendRequestStatus;
   createdAt: DateISO;
 }
+
+/**
+ * Records that `blockerUserId` has blocked `blockedUserId`.
+ */
+export interface BlockRecord {
+  blockerUserId: RecordId;
+  blockedUserId: RecordId;
+  createdAt: DateISO;
+}

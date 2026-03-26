@@ -1,6 +1,7 @@
 import type { FriendRequestInfo } from "@gamenite/shared";
 import { FriendRequestRepo } from "../repository.ts";
 import { getUserByUsername } from "./auth.service.ts";
+import { getFriendBlockErrorForViewer, isDirectedBlock } from "./block.service.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
 
 /**
@@ -23,6 +24,9 @@ export async function sendFriendRequest(
   if (!fromUser || !toUser) {
     return { error: "User not found" };
   }
+
+  const blockErr = await getFriendBlockErrorForViewer(fromUser.userId, toUser.userId);
+  if (blockErr) return { error: blockErr };
 
   // Check all friend requests to see if one already exists between these two users
   const allKeys = await FriendRequestRepo.getAllKeys();
@@ -99,6 +103,41 @@ export async function getPendingFriendRequests(username: string): Promise<Friend
 }
 
 /**
+ * Get all outgoing pending friend requests for a user.
+ *
+ * @param username - The user whose outgoing requests to fetch
+ * @returns Sorted by most recent first
+ */
+export async function getOutgoingPendingFriendRequests(
+  username: string,
+): Promise<FriendRequestInfo[]> {
+  const user = await getUserByUsername(username);
+  if (!user) return [];
+
+  const allKeys = await FriendRequestRepo.getAllKeys();
+  const results: FriendRequestInfo[] = [];
+
+  for (const key of allKeys) {
+    const req = await FriendRequestRepo.get(key);
+    if (req.fromUserId === user.userId && req.status === "pending") {
+      const [fromUserInfo, toUserInfo] = await Promise.all([
+        populateSafeUserInfo(req.fromUserId),
+        populateSafeUserInfo(req.toUserId),
+      ]);
+      results.push({
+        requestId: key,
+        fromUser: fromUserInfo,
+        toUser: toUserInfo,
+        status: req.status,
+        createdAt: new Date(req.createdAt),
+      });
+    }
+  }
+
+  return results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+/**
  * Accept a friend request. Only the recipient can accept.
  *
  * @param requestId - The friend request ID
@@ -115,6 +154,9 @@ export async function acceptFriendRequest(
   if (!req) return { error: "Friend request not found" };
   if (req.toUserId !== user.userId) return { error: "You can only accept requests sent to you" };
   if (req.status !== "pending") return { error: "This request has already been responded to" };
+
+  const blockErr = await getFriendBlockErrorForViewer(user.userId, req.fromUserId);
+  if (blockErr) return { error: blockErr };
 
   await FriendRequestRepo.set(requestId, { ...req, status: "accepted" });
 
@@ -141,7 +183,7 @@ export async function acceptFriendRequest(
 export async function declineFriendRequest(
   requestId: string,
   username: string,
-): Promise<{ success: true } | { error: string }> {
+): Promise<{ success: true; fromUsername: string } | { error: string }> {
   const user = await getUserByUsername(username);
   if (!user) return { error: "User not found" };
 
@@ -150,8 +192,9 @@ export async function declineFriendRequest(
   if (req.toUserId !== user.userId) return { error: "You can only decline requests sent to you" };
   if (req.status !== "pending") return { error: "This request has already been responded to" };
 
+  const fromUser = await populateSafeUserInfo(req.fromUserId);
   await FriendRequestRepo.set(requestId, { ...req, status: "declined" });
-  return { success: true };
+  return { success: true, fromUsername: fromUser.username };
 }
 
 /**
@@ -166,15 +209,20 @@ export async function getFriendStatus(
   profileUsername: string,
 ): Promise<
   | { status: "none" }
-  | { status: "pending_outgoing" }
+  | { status: "pending_outgoing"; requestId: string }
   | { status: "pending_incoming" }
   | { status: "friends" }
+  | { status: "blocked_by_them" }
+  | { status: "blocked_by_you" }
   | { error: string }
 > {
   const viewer = await getUserByUsername(viewerUsername);
   const profile = await getUserByUsername(profileUsername);
   if (!viewer || !profile) return { error: "User not found" };
   if (viewerUsername === profileUsername) return { status: "none" };
+
+  if (await isDirectedBlock(profile.userId, viewer.userId)) return { status: "blocked_by_them" };
+  if (await isDirectedBlock(viewer.userId, profile.userId)) return { status: "blocked_by_you" };
 
   const allKeys = await FriendRequestRepo.getAllKeys();
   for (const key of allKeys) {
@@ -185,7 +233,9 @@ export async function getFriendStatus(
     if (isViewerToProfile || isProfileToViewer) {
       if (req.status === "accepted") return { status: "friends" };
       if (req.status === "pending") {
-        return isViewerToProfile ? { status: "pending_outgoing" } : { status: "pending_incoming" };
+        return isViewerToProfile
+          ? { status: "pending_outgoing", requestId: key }
+          : { status: "pending_incoming" };
       }
     }
   }
@@ -252,4 +302,28 @@ export async function removeFriend(
   }
 
   return { error: "Friendship not found" };
+}
+
+/**
+ * Cancel an outgoing friend request. Only the sender can cancel.
+ *
+ * @param requestId - The friend request ID
+ * @param username - The cancelling user (must be the sender)
+ * @returns Success or error message
+ */
+export async function cancelFriendRequest(
+  requestId: string,
+  username: string,
+): Promise<{ success: true; toUsername: string } | { error: string }> {
+  const user = await getUserByUsername(username);
+  if (!user) return { error: "User not found" };
+
+  const req = await FriendRequestRepo.find(requestId);
+  if (!req) return { error: "Friend request not found" };
+  if (req.fromUserId !== user.userId) return { error: "You can only cancel requests you sent" };
+  if (req.status !== "pending") return { error: "This request has already been responded to" };
+
+  const toUser = await populateSafeUserInfo(req.toUserId);
+  await FriendRequestRepo.delete(requestId);
+  return { success: true, toUsername: toUser.username };
 }

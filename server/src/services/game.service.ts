@@ -6,6 +6,7 @@ import { nimGameService } from "../games/nim.ts";
 import { guessGameService } from "../games/guess.ts";
 import { hangmanGameService } from "../games/hangman.ts";
 import { type GameViewUpdates, type UserWithId } from "../types.ts";
+import type { RecordId } from "../models.ts";
 import { GameRepo } from "../repository.ts";
 
 /**
@@ -213,4 +214,16 @@ export async function viewGame(gameId: string, user: UserWithId) {
     view,
     players: await Promise.all(game.players.map(populateSafeUserInfo)),
   };
+}
+
+/**
+ * Finds the game that uses this chatId and returns its player list, null if none
+ */
+export async function findGamePlayersByChatId(chatId: string): Promise<RecordId[] | null> {
+  const keys = await GameRepo.getAllKeys();
+  for (const gameId of keys) {
+    const game = await GameRepo.find(gameId);
+    if (game?.chat === chatId) return game.players;
+  }
+  return null;
 }

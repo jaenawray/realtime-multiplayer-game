@@ -1,6 +1,10 @@
 import type { SafeUserInfo, UserAuth } from "@gamenite/shared";
+import type { FriendRequestInfo } from "../../../shared/src/friend.types.ts";
 import { useEffect, useState } from "react";
+import useLoginContext from "../hooks/useLoginContext";
 import { getFriendsList, removeFriend } from "../services/friendService";
+import UserLink from "./UserLink.tsx";
+import UserPresenceIndicator from "./UserPresenceIndicator.tsx";
 
 interface FriendsListProps {
   auth: UserAuth;
@@ -8,6 +12,7 @@ interface FriendsListProps {
 }
 
 export default function FriendsList({ auth, canModify = false }: FriendsListProps) {
+  const { socket } = useLoginContext();
   const [friends, setFriends] = useState<SafeUserInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +43,33 @@ export default function FriendsList({ auth, canModify = false }: FriendsListProp
     };
   }, [auth]);
 
+  // Real-time friends list updates
+  useEffect(() => {
+    const handleAccepted = (payload: FriendRequestInfo) => {
+      if (payload.fromUser.username === auth.username) {
+        setFriends((prev) => [...prev, payload.toUser]);
+      } else if (payload.toUser.username === auth.username) {
+        setFriends((prev) => [...prev, payload.fromUser]);
+      }
+    };
+
+    const handleRemoved = (payload: { username: string; friendUsername: string }) => {
+      if (payload.username === auth.username) {
+        setFriends((prev) => prev.filter((f) => f.username !== payload.friendUsername));
+      } else if (payload.friendUsername === auth.username) {
+        setFriends((prev) => prev.filter((f) => f.username !== payload.username));
+      }
+    };
+
+    socket.on("friendRequestAccepted", handleAccepted);
+    socket.on("friendRemoved", handleRemoved);
+
+    return () => {
+      socket.off("friendRequestAccepted", handleAccepted);
+      socket.off("friendRemoved", handleRemoved);
+    };
+  }, [auth.username, socket]);
+
   const handleRemoveFriend = async (friendUsername: string) => {
     setError(null);
     const response = await removeFriend(auth, friendUsername);
@@ -62,8 +94,19 @@ export default function FriendsList({ auth, canModify = false }: FriendsListProp
       {!loading && friends.length > 0 && (
         <ul>
           {friends.map((friend) => (
-            <li key={friend.username} style={{ marginBottom: "0.5rem" }}>
-              <strong>{friend.display}</strong> ({friend.username})
+            <li
+              key={friend.username}
+              style={{
+                marginBottom: "0.5rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                flexWrap: "wrap",
+              }}
+            >
+              <UserLink user={friend} />
+              <span className="smallAndGray">({friend.username})</span>
+              <UserPresenceIndicator user={friend} />
               {canModify && (
                 <>
                   {" "}

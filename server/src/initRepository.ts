@@ -2,8 +2,10 @@ import { randomUUID } from "node:crypto";
 import { getUserByUsername } from "./services/auth.service.ts";
 import {
   AuthRepo,
+  BlockRepo,
   ChatRepo,
   CommentRepo,
+  FriendRequestRepo,
   GameRepo,
   MessageRepo,
   ThreadRepo,
@@ -119,8 +121,10 @@ async function resetStoredUsers() {
 
 export async function resetEverythingToDefaults() {
   await AuthRepo.clear();
+  await BlockRepo.clear();
   await ChatRepo.clear();
   await CommentRepo.clear();
+  await FriendRequestRepo.clear();
   await GameRepo.clear();
   await MessageRepo.clear();
   await ThreadRepo.clear();

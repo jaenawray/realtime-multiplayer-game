@@ -1,8 +1,9 @@
 import { type SafeUserInfo, type UserUpdateRequest } from "@gamenite/shared";
 import { getUserByUsername, updateAuth } from "./auth.service.ts";
 import { UserRepo } from "../repository.ts";
+import { attachPresence } from "./presence.service.ts";
 
-const disallowedUsernames = new Set(["login", "signup", "list"]);
+const disallowedUsernames = new Set(["login", "signup", "list", "blocked-users"]);
 
 /**
  * Retrieves a single user from the database.
@@ -12,7 +13,7 @@ const disallowedUsernames = new Set(["login", "signup", "list"]);
  */
 export async function populateSafeUserInfo(userId: string): Promise<SafeUserInfo> {
   const record = await UserRepo.get(userId);
-  return Promise.resolve({
+  return attachPresence({
     username: record.username,
     display: record.display,
     createdAt: new Date(record.createdAt),
@@ -44,7 +45,7 @@ export async function createUser(
     display: username,
   });
   await updateAuth(username, password, id);
-  return Promise.resolve({
+  return attachPresence({
     username,
     createdAt,
     display: username,
