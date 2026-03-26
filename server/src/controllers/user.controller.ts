@@ -1,4 +1,11 @@
-import { type SafeUserInfo, withAuth, zUserAuth, zUserUpdateRequest } from "@gamenite/shared";
+import {
+  type UserGameHistoryPage,
+  type SafeUserInfo,
+  type UserGameStats,
+  withAuth,
+  zUserAuth,
+  zUserUpdateRequest,
+} from "@gamenite/shared";
 import {
   createUser,
   getUsersByUsername,
@@ -8,6 +15,7 @@ import {
 import { type RestAPI } from "../types.ts";
 import { z } from "zod";
 import { checkAuth, getUserByUsername } from "../services/auth.service.ts";
+import { getUserGameHistory, getUserGameStats } from "../services/userStats.service.ts";
 
 /**
  * Handles user login by validating credentials.
@@ -83,6 +91,53 @@ export const getByUsername: RestAPI<SafeUserInfo, { username: string }> = async 
     return;
   }
   res.send(await populateSafeUserInfo(user.userId));
+};
+
+/**
+ * Retrieves aggregate game stats by username.
+ */
+export const getStatsByUsername: RestAPI<UserGameStats, { username: string }> = async (
+  req,
+  res,
+) => {
+  const stats = await getUserGameStats(req.params.username);
+  if (!stats) {
+    res.status(404).send({ error: "User not found" });
+    return;
+  }
+  res.send(stats);
+};
+
+/**
+ * Retrieves paginated recent completed-game history by username.
+ */
+export const getHistoryByUsername: RestAPI<UserGameHistoryPage, { username: string }> = async (
+  req,
+  res,
+) => {
+  const query = z
+    .object({
+      offset: z.coerce.number().int().min(0).default(0),
+      limit: z.coerce.number().int().min(1).max(50).default(5),
+    })
+    .safeParse(req.query);
+
+  if (!query.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const history = await getUserGameHistory(
+    req.params.username,
+    query.data.offset,
+    query.data.limit,
+  );
+  if (!history) {
+    res.status(404).send({ error: "User not found" });
+    return;
+  }
+
+  res.send(history);
 };
 
 /**

@@ -1,8 +1,8 @@
-import { type SubmitEvent, useState } from "react";
+import React, { type SubmitEvent, useState } from "react";
 import useLoginContext from "./useLoginContext.ts";
 import useAuth from "./useAuth.ts";
 import { updateUser } from "../services/userService.ts";
-import type { UserUpdateRequest } from "@gamenite/shared";
+import type { ProfileVisibility, UserUpdateRequest } from "../../../shared/src/user.types.ts";
 import { DEFAULT_AVATAR } from "../components/avatarLibrary";
 
 const BIO_MAX_LENGTH = 500;
@@ -10,18 +10,37 @@ const BIO_MAX_LENGTH = 500;
 /**
  * Custom hook to manage profile form logic
  * @returns an object containing
- *  - Form values `display`, `password`, `confirm`, `avatar`, and `bio`
- *  - Form setters `setDisplay`, `setPassword`, `setConfirm`, `setAvatar`, and `setBio`
+ *  - Form values `display`, `password`, `confirm`, `avatar`, `bio`, and `profileVisibility`
+ *  - Form setters `setDisplay`, `setPassword`, `setConfirm`, `setAvatar`, `setBio`, and `setProfileVisibility`
  *  - Possibly-null error message `err`
  *  - Submission handler `handleSubmit`
  */
-export default function useEditProfileForm() {
+export default function useEditProfileForm(): {
+  display: string;
+  setDisplay: (value: string) => void;
+  password: string;
+  setPassword: (value: string) => void;
+  confirm: string;
+  setConfirm: (value: string) => void;
+  avatar: string;
+  setAvatar: (url: string) => void;
+  bio: string;
+  setBio: (value: string) => void;
+  bioMaxLength: number;
+  profileVisibility: "public" | "friends-only";
+  setProfileVisibility: (value: "public" | "friends-only") => void;
+  err: string | null;
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
+} {
   const { user, reset } = useLoginContext();
   const [display, setDisplay] = useState(user.display);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [avatar, setAvatar] = useState<string>(user.avatar ?? DEFAULT_AVATAR);
   const [bio, setBio] = useState(user.bio ?? "");
+  const [profileVisibility, setProfileVisibility] = useState<ProfileVisibility>(
+    user.profileVisibility ?? "public",
+  );
   const [err, setErr] = useState<null | string>(null);
   const auth = useAuth();
 
@@ -35,8 +54,15 @@ export default function useEditProfileForm() {
     const hasPasswordChange = password !== "" && password === confirm;
     const hasAvatarChange = avatar !== user.avatar;
     const hasBioChange = bio !== (user.bio ?? "");
+    const hasVisibilityChange = profileVisibility !== (user.profileVisibility ?? "public");
 
-    if (!hasDisplayChange && !hasPasswordChange && !hasAvatarChange && !hasBioChange) {
+    if (
+      !hasDisplayChange &&
+      !hasPasswordChange &&
+      !hasAvatarChange &&
+      !hasBioChange &&
+      !hasVisibilityChange
+    ) {
       setErr("No changes to submit");
       return;
     }
@@ -76,6 +102,7 @@ export default function useEditProfileForm() {
     if (hasPasswordChange) updates.password = password;
     if (hasAvatarChange) updates.avatar = avatar;
     if (hasBioChange) updates.bio = bio;
+    if (hasVisibilityChange) updates.profileVisibility = profileVisibility;
 
     const response = await updateUser(auth, updates);
     if ("error" in response) {
@@ -103,6 +130,8 @@ export default function useEditProfileForm() {
     bio,
     setBio,
     bioMaxLength: BIO_MAX_LENGTH,
+    profileVisibility,
+    setProfileVisibility,
     err,
     handleSubmit,
   };

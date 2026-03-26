@@ -18,6 +18,8 @@ import {
 import usePendingRequestNotification from "../hooks/usePendingRequestNotification.ts";
 import UserLink from "../components/UserLink.tsx";
 import UserPresenceIndicator from "../components/UserPresenceIndicator.tsx";
+import UserStatsPanel from "../components/UserStatsPanel";
+import UserGameHistoryPanel from "../components/UserGameHistoryPanel";
 
 /**
  * User's own profile page: edit display name, password, and manage friend requests.
@@ -40,6 +42,8 @@ export default function UpdateProfile() {
     bio,
     setBio,
     bioMaxLength,
+    profileVisibility,
+    setProfileVisibility,
     err,
     handleSubmit,
   } = useEditProfileForm();
@@ -300,6 +304,11 @@ export default function UpdateProfile() {
       </div>
       <hr />
       <div className="spacedSection">
+        <UserStatsPanel username={user.username} />
+        <UserGameHistoryPanel username={user.username} />
+      </div>
+      <hr />
+      <div className="spacedSection">
         <h3>Display name</h3>
         <div style={{ display: "flex", flexDirection: "row", gap: "0.5rem" }}>
           <input
@@ -349,6 +358,27 @@ export default function UpdateProfile() {
             </button>
           </div>
         </div>
+      </div>
+      <hr />
+      <div className="spacedSection">
+        <h3>Profile visibility</h3>
+        <p className="smallAndGray" style={{ marginBottom: "0.5rem" }}>
+          Control who can see your profile details (bio, avatar, etc.)
+        </p>
+        <select
+          className="notTooWide"
+          value={profileVisibility as string}
+          onChange={(e) => {
+            const value = e.target.value as "public" | "friends-only";
+            if (value === "public" || value === "friends-only") {
+              (setProfileVisibility as (v: "public" | "friends-only") => void)(value);
+            }
+          }}
+          style={{ padding: "0.5rem", fontSize: "1rem" }}
+        >
+          <option value="public">Public - Anyone can view</option>
+          <option value="friends-only">Friends only - Only friends can view</option>
+        </select>
       </div>
       <hr />
       <div className="spacedSection">

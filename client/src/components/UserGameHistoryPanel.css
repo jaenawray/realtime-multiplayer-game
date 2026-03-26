@@ -1,0 +1,30 @@
+.userGameHistoryPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.userGameHistoryRow {
+  align-items: center;
+  padding-block: 0.4rem;
+}
+
+.resultCell {
+  width: 5rem;
+  text-align: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.detailsCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.historyPager {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+}

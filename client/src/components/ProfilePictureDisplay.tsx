@@ -5,7 +5,7 @@ import { DEFAULT_AVATAR } from "./avatarLibrary";
 interface ProfilePictureDisplayProps {
   avatarUrl?: string;
   displayName: string;
-  size?: "small" | "medium" | "large";
+  size?: "tiny" | "small" | "medium" | "large";
 }
 
 export default function ProfilePictureDisplay({

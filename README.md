@@ -89,13 +89,15 @@ endpoints in `server/src/app.ts`.
 
 #### `/api/user`
 
-| Endpoint     | Method | Description                           |
-| ------------ | ------ | ------------------------------------- |
-| `/list`      | POST   | Get details of a list of users        |
-| `/login`     | POST   | Validate username/password entry      |
-| `/signup`    | POST   | Create a new user                     |
-| `/:username` | POST   | Update user's displayname or password |
-| `/:username` | GET    | Get information about a user          |
+| Endpoint             | Method | Description                                     |
+| -------------------- | ------ | ----------------------------------------------- |
+| `/list`              | POST   | Get details of a list of users                  |
+| `/login`             | POST   | Validate username/password entry                |
+| `/signup`            | POST   | Create a new user                               |
+| `/:username/stats`   | GET    | Get aggregate game stats for a user             |
+| `/:username/history` | GET    | Get paginated recent completed games for a user |
+| `/:username`         | POST   | Update user's displayname or password           |
+| `/:username`         | GET    | Get information about a user                    |
 
 ### Websockets
 

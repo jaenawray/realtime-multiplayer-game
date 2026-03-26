@@ -6,6 +6,11 @@
   border: 2px solid gray;
 }
 
+.profile-picture-display.tiny {
+  width: 24px;
+  height: 24px;
+}
+
 .profile-picture-display.small {
   width: 40px;
   height: 40px;

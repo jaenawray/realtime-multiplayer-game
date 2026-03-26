@@ -116,6 +116,7 @@ export interface ThreadRecord {
  * - `createdAt`: when this user registered.
  * - `avatar`: URL to the user's profile picture, or undefined for default avatar
  * - `bio`: User's bio text (max 500 characters), or undefined if not set
+ * - `profileVisibility`: Profile visibility setting (public or friends-only), defaults to public
  */
 export interface UserRecord {
   username: string; // References Auth records
@@ -123,6 +124,19 @@ export interface UserRecord {
   createdAt: DateISO;
   avatar?: string;
   bio?: string;
+  profileVisibility?: "public" | "friends-only";
+}
+
+/**
+ * Represents one row in the user_stats table, tracking a user's result in a
+ * completed game.
+ */
+export interface UserStatsRecord {
+  userId: RecordId; // References User records
+  gameId: RecordId; // References Game records
+  gameType: GameKey;
+  won: boolean;
+  playedAt: DateISO;
 }
 
 /**

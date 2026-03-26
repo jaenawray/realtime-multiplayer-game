@@ -10,10 +10,12 @@ import {
   MessageRepo,
   ThreadRepo,
   UserRepo,
+  UserStatsRepo,
 } from "./repository.ts";
 import type { GameRecord, ThreadRecord } from "./models.ts";
 import { createChat } from "./services/chat.service.ts";
 import { createUser, updateUser } from "./services/user.service.ts";
+import { rebuildUserStatsFromGames } from "./services/userStats.service.ts";
 
 /** Reset stored games with example data. */
 async function resetStoredGames() {
@@ -54,6 +56,7 @@ async function resetStoredGames() {
 
   await GameRepo.clear();
   await Promise.all(Object.entries(storedGames).map(([id, entry]) => GameRepo.set(id, entry)));
+  await rebuildUserStatsFromGames();
 }
 
 /** Reset stored threads with example data */
@@ -129,6 +132,7 @@ export async function resetEverythingToDefaults() {
   await MessageRepo.clear();
   await ThreadRepo.clear();
   await UserRepo.clear();
+  await UserStatsRepo.clear();
 
   await resetStoredUsers();
   await resetStoredThreads();

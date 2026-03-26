@@ -58,6 +58,8 @@ app.use(
         .post("/block", block.postBlockUser(io))
         .post("/unblock", block.postUnblockUser(io))
         .post("/blocked-users", block.postBlockedUsersList)
+        .get("/:username/stats", user.getStatsByUsername)
+        .get("/:username/history", user.getHistoryByUsername)
         .post("/:username", user.postByUsername)
         .get("/:username", user.getByUsername),
     ),

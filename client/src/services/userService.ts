@@ -1,6 +1,13 @@
 import type { APIResponse } from "../util/types.ts";
 import { api, exceptionToErrorMsg } from "./api.ts";
-import type { ErrorMsg, SafeUserInfo, UserAuth, UserUpdateRequest } from "@gamenite/shared";
+import type {
+  ErrorMsg,
+  SafeUserInfo,
+  UserAuth,
+  UserGameHistoryPage,
+  UserGameStats,
+  UserUpdateRequest,
+} from "@gamenite/shared";
 
 const USER_API_URL = `/api/user`;
 
@@ -76,6 +83,37 @@ export const signupUser = async (user: UserAuth): APIResponse<SafeUserInfo> => {
 export const getUserById = async (username: string): APIResponse<SafeUserInfo> => {
   try {
     const res = await api.get<SafeUserInfo | ErrorMsg>(`${USER_API_URL}/${username}`);
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
+/**
+ * Sends a GET request for aggregate game statistics about a user.
+ */
+export const getUserStats = async (username: string): APIResponse<UserGameStats> => {
+  try {
+    const res = await api.get<UserGameStats>(`${USER_API_URL}/${username}/stats`);
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
+/**
+ * Sends a GET request for paginated recent completed games for a user.
+ */
+export const getUserGameHistory = async (
+  username: string,
+  offset = 0,
+  limit = 5,
+): APIResponse<UserGameHistoryPage> => {
+  try {
+    const params = new URLSearchParams({ offset: `${offset}`, limit: `${limit}` });
+    const res = await api.get<UserGameHistoryPage>(
+      `${USER_API_URL}/${username}/history?${params.toString()}`,
+    );
     return res.data;
   } catch (error) {
     return exceptionToErrorMsg(error);
