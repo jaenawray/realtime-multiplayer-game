@@ -1,7 +1,10 @@
-import { withAuth, zNewMessageRequest } from "@gamenite/shared";
+import { withAuth } from "../../../shared/src/auth.types.ts";
+import { zNewMessageRequest } from "../../../shared/src/message.types.ts";
 import { type SocketAPI } from "../types.ts";
 import { z } from "zod";
 import { addMessageToChat, forceChatById } from "../services/chat.service.ts";
+import { assertCanMessagePlayers } from "../services/block.service.ts";
+import { findGamePlayersByChatId } from "../services/game.service.ts";
 import { populateSafeUserInfo } from "../services/user.service.ts";
 import { createMessage } from "../services/message.service.ts";
 import { logSocketError } from "./socket.controller.ts";
@@ -63,6 +66,10 @@ export const socketSendMessage: SocketAPI = (socket, io) => async (body) => {
       payload: { chatId, text },
     } = withAuth(zNewMessageRequest).parse(body);
     const user = await enforceAuth(auth);
+    const players = await findGamePlayersByChatId(chatId);
+    if (players) {
+      await assertCanMessagePlayers(user.userId, players);
+    }
     const now = new Date();
     const message = await createMessage(user, text, now);
     await addMessageToChat(chatId, user, message.messageId);

@@ -4,6 +4,7 @@ import express, { Router } from "express";
 import { Server } from "socket.io";
 import { z } from "zod";
 import * as http from "node:http";
+import * as block from "./controllers/block.controller.ts";
 import * as chat from "./controllers/chat.controller.ts";
 import * as friend from "./controllers/friend.controller.ts";
 import * as game from "./controllers/game.controller.ts";
@@ -54,6 +55,8 @@ app.use(
         .post("/friend-status", friend.postFriendStatus)
         .post("/friends-list", friend.getFriendsListEndpoint)
         .post("/remove-friend", friend.postRemoveFriend(io))
+        .post("/block", block.postBlockUser(io))
+        .post("/unblock", block.postUnblockUser(io))
         .post("/:username", user.postByUsername)
         .get("/:username", user.getByUsername),
     ),

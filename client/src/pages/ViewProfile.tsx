@@ -3,7 +3,13 @@ import type { FriendRequestInfo } from "../../../shared/src/friend.types.ts";
 import { useEffect, useState } from "react";
 import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
-import { cancelFriendRequest, getFriendStatus, sendFriendRequest } from "../services/friendService";
+import {
+  blockUser,
+  cancelFriendRequest,
+  getFriendStatus,
+  sendFriendRequest,
+  unblockUser,
+} from "../services/friendService";
 import { getUserById } from "../services/userService";
 import ProfilePictureDisplay from "../components/ProfilePictureDisplay";
 import UserPresenceIndicator from "../components/UserPresenceIndicator.tsx";
@@ -28,6 +34,8 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     | { type: "pending_outgoing"; requestId: string }
     | { type: "pending_incoming" }
     | { type: "friends" }
+    | { type: "blocked_by_them" }
+    | { type: "blocked_by_you" }
     | { type: "error"; msg: string }
   >({ type: "loading" });
   const [friendActionError, setFriendActionError] = useState<string | null>(null);
@@ -132,12 +140,37 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     socket.on("friendRequestDeclined", handleDeclined);
     socket.on("friendRemoved", handleRemoved);
 
+    // Updates the friend status if the user is blocked
+    const handleUserBlocked = (payload: { blockerUsername: string; blockedUsername: string }) => {
+      const involves =
+        (payload.blockerUsername === user.username && payload.blockedUsername === username) ||
+        (payload.blockerUsername === username && payload.blockedUsername === user.username);
+      if (!involves) return;
+      if (payload.blockerUsername === user.username) {
+        setFriendStatus({ type: "blocked_by_you" });
+      } else {
+        setFriendStatus({ type: "blocked_by_them" });
+      }
+    };
+
+    const handleUserUnblocked = (payload: { blockerUsername: string; blockedUsername: string }) => {
+      const involves =
+        payload.blockerUsername === user.username && payload.blockedUsername === username;
+      if (!involves) return;
+      setFriendStatus({ type: "none" });
+    };
+
+    socket.on("userBlocked", handleUserBlocked);
+    socket.on("userUnblocked", handleUserUnblocked);
+
     return () => {
       socket.off("friendRequestReceived", handleReceived);
       socket.off("friendRequestCancelled", handleCancelled);
       socket.off("friendRequestAccepted", handleAccepted);
       socket.off("friendRequestDeclined", handleDeclined);
       socket.off("friendRemoved", handleRemoved);
+      socket.off("userBlocked", handleUserBlocked);
+      socket.off("userUnblocked", handleUserUnblocked);
     };
   }, [componentState.type, username, user.username, socket]);
 
@@ -152,6 +185,28 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       setFriendActionError(response.error);
     } else {
       setFriendStatus({ type: "pending_outgoing", requestId: response.requestId });
+    }
+  }
+
+  /** Blocks this profile user */
+  async function handleBlockUser() {
+    setFriendActionError(null);
+    const response = await blockUser({ username: user.username, password: pass }, username);
+    if ("error" in response) {
+      setFriendActionError(response.error);
+    } else {
+      setFriendStatus({ type: "blocked_by_you" });
+    }
+  }
+
+  /** Removes your block of this user */
+  async function handleUnblockUser() {
+    setFriendActionError(null);
+    const response = await unblockUser({ username: user.username, password: pass }, username);
+    if ("error" in response) {
+      setFriendActionError(response.error);
+    } else {
+      setFriendStatus({ type: "none" });
     }
   }
 
@@ -219,37 +274,86 @@ export default function ViewProfile({ username }: ViewProfileProps) {
               </p>
             )}
             <div>
-              {friendStatus.type === "loading" && (
-                <button className="primary narrow friendStatusGrey" disabled>
-                  Loading...
-                </button>
+              {friendStatus.type === "blocked_by_them" && (
+                <p className="friendStatusGrey" style={{ margin: "0 0 0.75rem 0" }}>
+                  This user has blocked you. You cannot send them a friend request or message them
+                  in games.
+                </p>
               )}
-              {friendStatus.type === "none" && (
-                <button
-                  className="primary narrow friendStatusBlue"
-                  onClick={handleSendFriendRequest}
-                >
-                  Send Friend Request
-                </button>
+              {friendStatus.type === "blocked_by_you" && (
+                <div style={{ marginBottom: "0.75rem" }}>
+                  <p className="friendStatusGrey" style={{ margin: "0 0 0.5rem 0" }}>
+                    You have blocked this user.
+                  </p>
+                  <button
+                    type="button"
+                    className="primary narrow friendStatusBlue"
+                    onClick={handleUnblockUser}
+                  >
+                    Unblock
+                  </button>
+                </div>
               )}
-              {friendStatus.type === "pending_outgoing" && (
-                <button
-                  className="primary narrow friendStatusGrey"
-                  onClick={() => handleCancelFriendRequest(friendStatus.requestId)}
-                >
-                  Cancel Request
-                </button>
+              {friendStatus.type === "error" && (
+                <p className="error-message" style={{ color: "#f00" }}>
+                  {friendStatus.msg}
+                </p>
               )}
-              {friendStatus.type === "pending_incoming" && (
-                <button className="primary narrow friendStatusGrey" disabled>
-                  They sent you a request
-                </button>
-              )}
-              {friendStatus.type === "friends" && (
-                <button className="primary narrow friendStatusGreen" disabled>
-                  You are friends
-                </button>
-              )}
+              {friendStatus.type !== "blocked_by_them" &&
+                friendStatus.type !== "blocked_by_you" &&
+                friendStatus.type !== "error" && (
+                  <>
+                    {friendStatus.type === "loading" && (
+                      <button className="primary narrow friendStatusGrey" disabled>
+                        Loading...
+                      </button>
+                    )}
+                    {friendStatus.type === "none" && (
+                      <button
+                        className="primary narrow friendStatusBlue"
+                        onClick={handleSendFriendRequest}
+                      >
+                        Send Friend Request
+                      </button>
+                    )}
+                    {friendStatus.type === "pending_outgoing" && (
+                      <button
+                        className="primary narrow friendStatusGrey"
+                        onClick={() => handleCancelFriendRequest(friendStatus.requestId)}
+                      >
+                        Cancel Request
+                      </button>
+                    )}
+                    {friendStatus.type === "pending_incoming" && (
+                      <button className="primary narrow friendStatusGrey" disabled>
+                        They sent you a request
+                      </button>
+                    )}
+                    {friendStatus.type === "friends" && (
+                      <button className="primary narrow friendStatusGreen" disabled>
+                        You are friends
+                      </button>
+                    )}
+                    {(friendStatus.type === "none" ||
+                      friendStatus.type === "pending_outgoing" ||
+                      friendStatus.type === "pending_incoming" ||
+                      friendStatus.type === "friends") && (
+                      <div style={{ marginTop: "0.75rem" }}>
+                        <button
+                          type="button"
+                          className="primary narrow"
+                          style={{
+                            background: "#8b2942",
+                            borderColor: "#6e1f33",
+                          }}
+                          onClick={handleBlockUser}
+                        >
+                          Block user
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
             </div>
           </div>
         </div>

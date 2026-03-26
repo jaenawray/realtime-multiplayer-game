@@ -48,6 +48,8 @@ export interface ServerToClientEvents {
     toUsername: string;
   }) => void;
   friendRemoved: (payload: { username: string; friendUsername: string }) => void;
+  userBlocked: (payload: { blockerUsername: string; blockedUsername: string }) => void;
+  userUnblocked: (payload: { blockerUsername: string; blockedUsername: string }) => void;
   gamePlayersUpdated: (payload: SafeUserInfo[]) => void;
   gameStateUpdated: (payload: TaggedGameView & { forPlayer: boolean }) => void;
   gameWatched: (payload: GamePlayInfo) => void;

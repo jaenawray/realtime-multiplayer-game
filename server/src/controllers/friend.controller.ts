@@ -1,4 +1,10 @@
-import { type FriendRequestInfo, type SafeUserInfo, withAuth, zUserAuth } from "@gamenite/shared";
+import {
+  type FriendProfileStatus,
+  type FriendRequestInfo,
+  type SafeUserInfo,
+  withAuth,
+  zUserAuth,
+} from "@gamenite/shared";
 import { type RestAPI, type GameServer } from "../types.ts";
 import { z } from "zod";
 import { checkAuth } from "../services/auth.service.ts";
@@ -149,12 +155,7 @@ export const postDeclineFriendRequest =
 /**
  * Get friend status between current user and another user (for profile display).
  */
-export const postFriendStatus: RestAPI<
-  | { status: "none" }
-  | { status: "pending_outgoing" }
-  | { status: "pending_incoming" }
-  | { status: "friends" }
-> = async (req, res) => {
+export const postFriendStatus: RestAPI<FriendProfileStatus> = async (req, res) => {
   const body = withAuth(z.object({ username: z.string() })).safeParse(req.body);
   if (!body.success) {
     res.status(400).send({ error: "Poorly-formed request" });

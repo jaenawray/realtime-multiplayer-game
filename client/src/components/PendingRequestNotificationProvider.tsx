@@ -71,13 +71,27 @@ export default function PendingRequestNotificationProvider({
     socket.on("friendRequestAccepted", handleAccepted);
     socket.on("friendRequestDeclined", handleDeclined);
 
+    // Removes pending requests from a user if they are blocked
+    const handleUserBlocked = (payload: { blockerUsername: string; blockedUsername: string }) => {
+      if (payload.blockerUsername !== user.username && payload.blockedUsername !== user.username) {
+        return;
+      }
+      getPendingFriendRequests({ username: user.username, password: pass }).then((response) => {
+        if ("error" in response) return;
+        setUnreadRequestIds(new Set(response.map((r) => r.requestId)));
+      });
+    };
+
+    socket.on("userBlocked", handleUserBlocked);
+
     return () => {
       socket.off("friendRequestReceived", handleReceived);
       socket.off("friendRequestCancelled", handleCancelled);
       socket.off("friendRequestAccepted", handleAccepted);
       socket.off("friendRequestDeclined", handleDeclined);
+      socket.off("userBlocked", handleUserBlocked);
     };
-  }, [user.username, socket]);
+  }, [user.username, pass, socket]);
 
   const markAllRead = useCallback(() => {
     setUnreadRequestIds(new Set());

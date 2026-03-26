@@ -5,9 +5,9 @@ import { app } from "../src/app.ts";
 
 let response: Response;
 const auth1 = { username: "user1", password: "pwd1111" };
-const user1 = { username: "user1", display: "Yāo" };
+const user1 = { username: "user1", display: "Yāo", isOnline: false };
 const auth2 = { username: "user2", password: "pwd2222" };
-const user2 = { username: "user2", display: "Sénior Dos" };
+const user2 = { username: "user2", display: "Sénior Dos", isOnline: false };
 
 describe("GET /api/user/:id", () => {
   it("should 404 for nonexistent users", async () => {
@@ -148,6 +148,7 @@ describe("POST /api/user/signup", () => {
       username,
       display: username,
       createdAt: expect.anything(),
+      isOnline: false,
     });
   });
 

@@ -1,6 +1,7 @@
 import type { FriendRequestInfo } from "@gamenite/shared";
 import { FriendRequestRepo } from "../repository.ts";
 import { getUserByUsername } from "./auth.service.ts";
+import { getFriendBlockErrorForViewer, isDirectedBlock } from "./block.service.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
 
 /**
@@ -23,6 +24,9 @@ export async function sendFriendRequest(
   if (!fromUser || !toUser) {
     return { error: "User not found" };
   }
+
+  const blockErr = await getFriendBlockErrorForViewer(fromUser.userId, toUser.userId);
+  if (blockErr) return { error: blockErr };
 
   // Check all friend requests to see if one already exists between these two users
   const allKeys = await FriendRequestRepo.getAllKeys();
@@ -151,6 +155,9 @@ export async function acceptFriendRequest(
   if (req.toUserId !== user.userId) return { error: "You can only accept requests sent to you" };
   if (req.status !== "pending") return { error: "This request has already been responded to" };
 
+  const blockErr = await getFriendBlockErrorForViewer(user.userId, req.fromUserId);
+  if (blockErr) return { error: blockErr };
+
   await FriendRequestRepo.set(requestId, { ...req, status: "accepted" });
 
   const [fromUserInfo, toUserInfo] = await Promise.all([
@@ -205,12 +212,17 @@ export async function getFriendStatus(
   | { status: "pending_outgoing"; requestId: string }
   | { status: "pending_incoming" }
   | { status: "friends" }
+  | { status: "blocked_by_them" }
+  | { status: "blocked_by_you" }
   | { error: string }
 > {
   const viewer = await getUserByUsername(viewerUsername);
   const profile = await getUserByUsername(profileUsername);
   if (!viewer || !profile) return { error: "User not found" };
   if (viewerUsername === profileUsername) return { status: "none" };
+
+  if (await isDirectedBlock(profile.userId, viewer.userId)) return { status: "blocked_by_them" };
+  if (await isDirectedBlock(viewer.userId, profile.userId)) return { status: "blocked_by_you" };
 
   const allKeys = await FriendRequestRepo.getAllKeys();
   for (const key of allKeys) {
