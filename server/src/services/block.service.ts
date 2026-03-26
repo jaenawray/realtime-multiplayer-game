@@ -1,6 +1,8 @@
+import type { SafeUserInfo } from "@gamenite/shared";
 import type { RecordId } from "../models.ts";
 import { BlockRepo, FriendRequestRepo } from "../repository.ts";
 import { getUserByUsername } from "./auth.service.ts";
+import { populateSafeUserInfo } from "./user.service.ts";
 
 function blockKey(blockerUserId: RecordId, blockedUserId: RecordId): string {
   return `block:${blockerUserId}:${blockedUserId}`;
@@ -83,6 +85,29 @@ export async function blockUser(
     createdAt: new Date().toISOString(),
   });
   return { success: true, wasFriends };
+}
+
+/**
+ * Users the given account has blocked (only when `blockerUsername` is the authenticated user)
+ */
+export async function getBlockedUsersForUser(blockerUsername: string): Promise<SafeUserInfo[]> {
+  const blocker = await getUserByUsername(blockerUsername);
+  if (!blocker) return [];
+
+  const prefix = `block:${blocker.userId}:`;
+  const allKeys = await BlockRepo.getAllKeys();
+  const blockedUserIds: RecordId[] = [];
+  for (const key of allKeys) {
+    if (key.startsWith(prefix)) {
+      const rec = await BlockRepo.find(key);
+      if (rec) blockedUserIds.push(rec.blockedUserId);
+    }
+  }
+
+  const users = await Promise.all(blockedUserIds.map((id) => populateSafeUserInfo(id)));
+  return users.toSorted((a, b) =>
+    a.display.localeCompare(b.display, undefined, { sensitivity: "base" }),
+  );
 }
 
 export async function unblockUser(

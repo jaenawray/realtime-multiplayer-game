@@ -1,12 +1,32 @@
-import { withAuth } from "@gamenite/shared";
+import { type SafeUserInfo, withAuth, zUserAuth } from "@gamenite/shared";
 import { type RestAPI, type GameServer } from "../types.ts";
 import { z } from "zod";
 import { checkAuth } from "../services/auth.service.ts";
-import { blockUser, unblockUser } from "../services/block.service.ts";
+import { blockUser, getBlockedUsersForUser, unblockUser } from "../services/block.service.ts";
 
 const zTargetUsername = z.object({
   targetUsername: z.string(),
 });
+
+/**
+ * List users the authenticated account has blocked (only your own list)
+ */
+export const postBlockedUsersList: RestAPI<SafeUserInfo[]> = async (req, res) => {
+  const body = z.object({ auth: zUserAuth }).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const list = await getBlockedUsersForUser(user.username);
+  res.send(list);
+};
 
 /**
  * Block another user (removes friendship and pending requests between users)

@@ -1,5 +1,6 @@
+import type { SafeUserInfo } from "@gamenite/shared";
 import type { FriendRequestInfo } from "../../../shared/src/friend.types.ts";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
 import useEditProfileForm from "../hooks/useEditProfileForm";
@@ -9,10 +10,13 @@ import {
   acceptFriendRequest,
   cancelFriendRequest,
   declineFriendRequest,
+  getBlockedUsersList,
   getOutgoingPendingFriendRequests,
   getPendingFriendRequests,
+  unblockUser,
 } from "../services/friendService";
 import usePendingRequestNotification from "../hooks/usePendingRequestNotification.ts";
+import UserLink from "../components/UserLink.tsx";
 import UserPresenceIndicator from "../components/UserPresenceIndicator.tsx";
 
 /**
@@ -49,6 +53,46 @@ export default function UpdateProfile() {
     username: string;
     password: string;
   }) => Promise<FriendRequestInfo[] | { error: string }>;
+
+  const [blockedUsers, setBlockedUsers] = useState<SafeUserInfo[]>([]);
+  const [blockedLoading, setBlockedLoading] = useState(true);
+  const [blockedListError, setBlockedListError] = useState<string | null>(null);
+
+  // Refetch blocked-user list
+  const refreshBlockedUsers = useCallback(async () => {
+    const response = await getBlockedUsersList({ username: user.username, password: pass });
+    if ("error" in response) {
+      setBlockedListError(response.error);
+    } else {
+      setBlockedListError(null);
+      setBlockedUsers(response);
+    }
+  }, [user.username, pass]);
+
+  // Initial load of who you have blocked (only runs on this profile page for the logged-in user)
+  useEffect(() => {
+    let cancel = false;
+    queueMicrotask(() => setBlockedLoading(true));
+    getBlockedUsersList({ username: user.username, password: pass })
+      .then((response) => {
+        if (cancel) return;
+        setBlockedLoading(false);
+        if ("error" in response) {
+          setBlockedListError(response.error);
+        } else {
+          setBlockedListError(null);
+          setBlockedUsers(response);
+        }
+      })
+      .catch((err) => {
+        if (cancel) return;
+        setBlockedLoading(false);
+        setBlockedListError(`${err}`);
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [user.username, pass]);
 
   useEffect(() => {
     let cancel = false;
@@ -155,13 +199,24 @@ export default function UpdateProfile() {
     socket.on("friendRequestAccepted", handleAccepted);
     socket.on("friendRequestDeclined", handleDeclined);
 
+    const handleUserBlocked = (payload: { blockerUsername: string; blockedUsername: string }) => {
+      if (payload.blockerUsername === user.username) void refreshBlockedUsers();
+    };
+    const handleUserUnblocked = (payload: { blockerUsername: string; blockedUsername: string }) => {
+      if (payload.blockerUsername === user.username) void refreshBlockedUsers();
+    };
+    socket.on("userBlocked", handleUserBlocked);
+    socket.on("userUnblocked", handleUserUnblocked);
+
     return () => {
       socket.off("friendRequestReceived", handleReceived);
       socket.off("friendRequestCancelled", handleCancelled);
       socket.off("friendRequestAccepted", handleAccepted);
       socket.off("friendRequestDeclined", handleDeclined);
+      socket.off("userBlocked", handleUserBlocked);
+      socket.off("userUnblocked", handleUserUnblocked);
     };
-  }, [user.username, socket]);
+  }, [user.username, socket, refreshBlockedUsers]);
 
   const staleRequestErrors = [
     "This request has already been responded to",
@@ -201,6 +256,16 @@ export default function UpdateProfile() {
       }
     } else {
       setPendingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+    }
+  }
+
+  async function handleUnblockFromList(targetUsername: string) {
+    setBlockedListError(null);
+    const response = await unblockUser({ username: user.username, password: pass }, targetUsername);
+    if ("error" in response) {
+      setBlockedListError(response.error);
+    } else {
+      setBlockedUsers((prev) => prev.filter((u) => u.username !== targetUsername));
     }
   }
 
@@ -335,6 +400,50 @@ export default function UpdateProfile() {
       <hr />
       <div className="spacedSection">
         <FriendsList auth={{ username: user.username, password: pass }} canModify={true} />
+      </div>
+      <hr />
+      <div className="spacedSection">
+        <h3>Blocked users</h3>
+        <p className="smallAndGray" style={{ marginTop: 0 }}>
+          Only you can see this list. These people cannot friend or message you in games until you
+          unblock them.
+        </p>
+        {blockedListError && (
+          <p className="error-message" style={{ color: "#f00" }}>
+            {blockedListError}
+          </p>
+        )}
+        {blockedLoading && <p>Loading...</p>}
+        {!blockedLoading && blockedUsers.length === 0 && (
+          <p className="smallAndGray">You have not blocked anyone.</p>
+        )}
+        {!blockedLoading && blockedUsers.length > 0 && (
+          <ul>
+            {blockedUsers.map((bu) => (
+              <li
+                key={bu.username}
+                style={{
+                  marginBottom: "0.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  flexWrap: "wrap",
+                }}
+              >
+                <UserLink user={bu} />
+                <span className="smallAndGray">({bu.username})</span>
+                <UserPresenceIndicator user={bu} />
+                <button
+                  type="button"
+                  className="primary narrow friendStatusBlue"
+                  onClick={() => void handleUnblockFromList(bu.username)}
+                >
+                  Unblock
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <hr />
       <div className="spacedSection">

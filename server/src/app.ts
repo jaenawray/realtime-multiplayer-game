@@ -57,6 +57,7 @@ app.use(
         .post("/remove-friend", friend.postRemoveFriend(io))
         .post("/block", block.postBlockUser(io))
         .post("/unblock", block.postUnblockUser(io))
+        .post("/blocked-users", block.postBlockedUsersList)
         .post("/:username", user.postByUsername)
         .get("/:username", user.getByUsername),
     ),

@@ -138,6 +138,20 @@ export const getFriendsList = async (auth: UserAuth): APIResponse<SafeUserInfo[]
 };
 
 /**
+ * Users you have blocked (only available for your own account)
+ */
+export const getBlockedUsersList = async (auth: UserAuth): APIResponse<SafeUserInfo[]> => {
+  try {
+    const res = await api.post<SafeUserInfo[]>(`${USER_API_URL}/blocked-users`, {
+      auth,
+    });
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
+/**
  * Remove a friend.
  */
 export const removeFriend = async (

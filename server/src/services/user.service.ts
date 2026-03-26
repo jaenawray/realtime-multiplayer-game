@@ -3,7 +3,7 @@ import { getUserByUsername, updateAuth } from "./auth.service.ts";
 import { UserRepo } from "../repository.ts";
 import { attachPresence } from "./presence.service.ts";
 
-const disallowedUsernames = new Set(["login", "signup", "list"]);
+const disallowedUsernames = new Set(["login", "signup", "list", "blocked-users"]);
 
 /**
  * Retrieves a single user from the database.
