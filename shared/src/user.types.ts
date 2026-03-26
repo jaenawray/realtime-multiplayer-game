@@ -46,6 +46,27 @@ export interface UserGameStats {
   };
 }
 
+/**
+ * One recent completed game for a specific user.
+ */
+export interface UserRecentGame {
+  gameId: string;
+  gameType: "nim" | "guess" | "hangman";
+  won: boolean;
+  playedAt: Date;
+  players: { username: string; display: string }[];
+}
+
+/**
+ * Paginated response for recent game history on a user profile.
+ */
+export interface UserGameHistoryPage {
+  total: number;
+  offset: number;
+  limit: number;
+  entries: UserRecentGame[];
+}
+
 /*** TYPES USED IN THE USER API ***/
 
 /**

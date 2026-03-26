@@ -4,6 +4,7 @@ import type {
   ErrorMsg,
   SafeUserInfo,
   UserAuth,
+  UserGameHistoryPage,
   UserGameStats,
   UserUpdateRequest,
 } from "@gamenite/shared";
@@ -93,7 +94,26 @@ export const getUserById = async (username: string): APIResponse<SafeUserInfo> =
  */
 export const getUserStats = async (username: string): APIResponse<UserGameStats> => {
   try {
-    const res = await api.get<UserGameStats | ErrorMsg>(`${USER_API_URL}/${username}/stats`);
+    const res = await api.get<UserGameStats>(`${USER_API_URL}/${username}/stats`);
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};
+
+/**
+ * Sends a GET request for paginated recent completed games for a user.
+ */
+export const getUserGameHistory = async (
+  username: string,
+  offset = 0,
+  limit = 5,
+): APIResponse<UserGameHistoryPage> => {
+  try {
+    const params = new URLSearchParams({ offset: `${offset}`, limit: `${limit}` });
+    const res = await api.get<UserGameHistoryPage>(
+      `${USER_API_URL}/${username}/history?${params.toString()}`,
+    );
     return res.data;
   } catch (error) {
     return exceptionToErrorMsg(error);

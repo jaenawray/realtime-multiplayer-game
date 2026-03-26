@@ -6,6 +6,7 @@ import { getFriendStatus, sendFriendRequest } from "../services/friendService";
 import { getUserById } from "../services/userService";
 import ProfilePictureDisplay from "../components/ProfilePictureDisplay";
 import UserStatsPanel from "../components/UserStatsPanel";
+import UserGameHistoryPanel from "../components/UserGameHistoryPanel";
 
 interface ViewProfileProps {
   username: string;
@@ -146,6 +147,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
                 {canViewPrivateInfo && (
                   <div style={{ marginTop: "1rem" }}>
                     <UserStatsPanel username={profileUser.username} />
+                    <UserGameHistoryPanel username={profileUser.username} />
                   </div>
                 )}
               </div>

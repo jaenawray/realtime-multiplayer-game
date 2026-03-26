@@ -63,6 +63,51 @@ describe("GET /api/user/:id/stats", () => {
   });
 });
 
+describe("GET /api/user/:id/history", () => {
+  it("should 404 for nonexistent users", async () => {
+    response = await supertest(app).get(`/api/user/${randomUUID().toString()}/history`);
+    expect(response.status).toBe(404);
+    expect(response.body).toStrictEqual({ error: "User not found" });
+  });
+
+  it("should 400 for malformed pagination query", async () => {
+    response = await supertest(app).get(`/api/user/user2/history?offset=-1&limit=5`);
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "Poorly-formed request" });
+  });
+
+  it("should return paginated recent game history", async () => {
+    response = await supertest(app).get(`/api/user/user2/history?offset=0&limit=1`);
+    expect(response.status).toBe(200);
+    expect(response.body).toStrictEqual({
+      total: 1,
+      offset: 0,
+      limit: 1,
+      entries: [
+        {
+          gameId: expect.any(String),
+          gameType: "nim",
+          won: false,
+          playedAt: expect.anything(),
+          players: [
+            { username: "user2", display: "Sénior Dos" },
+            { username: "user3", display: "Frau Drei" },
+          ],
+        },
+      ],
+    });
+
+    response = await supertest(app).get(`/api/user/user2/history?offset=1&limit=1`);
+    expect(response.status).toBe(200);
+    expect(response.body).toStrictEqual({
+      total: 1,
+      offset: 1,
+      limit: 1,
+      entries: [],
+    });
+  });
+});
+
 describe("POST /api/user/login", () => {
   it("should return 400 on ill-formed payload", async () => {
     response = await supertest(app)

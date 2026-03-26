@@ -1,6 +1,12 @@
-import type { GuessState, HangmanState, NimState, UserGameStats } from "@gamenite/shared";
+import type {
+  GuessState,
+  HangmanState,
+  NimState,
+  UserGameHistoryPage,
+  UserGameStats,
+} from "@gamenite/shared";
 import type { GameRecord, UserStatsRecord } from "../models.ts";
-import { GameRepo, UserStatsRepo } from "../repository.ts";
+import { GameRepo, UserRepo, UserStatsRepo } from "../repository.ts";
 import { getUserByUsername } from "./auth.service.ts";
 
 function emptyStatsByType() {
@@ -123,5 +129,53 @@ export async function getUserGameStats(username: string): Promise<UserGameStats 
     gamesPlayed,
     wins,
     byType,
+  };
+}
+
+/**
+ * Retrieve paginated recent completed games for one username.
+ */
+export async function getUserGameHistory(
+  username: string,
+  offset: number,
+  limit: number,
+): Promise<UserGameHistoryPage | null> {
+  const user = await getUserByUsername(username);
+  if (!user) return null;
+
+  const rows = (await getAllStatsRows())
+    .filter((row) => row.userId === user.userId)
+    .toSorted((r1, r2) => new Date(r2.playedAt).getTime() - new Date(r1.playedAt).getTime());
+
+  const pageRows = rows.slice(offset, offset + limit);
+  const entries = await Promise.all(
+    pageRows.map(async (row) => {
+      const game = await GameRepo.find(row.gameId);
+      const players = game
+        ? (
+            await Promise.all(
+              game.players.map(async (playerId) => {
+                const player = await UserRepo.find(playerId);
+                return player ? { username: player.username, display: player.display } : null;
+              }),
+            )
+          ).filter((player): player is { username: string; display: string } => player !== null)
+        : [];
+
+      return {
+        gameId: row.gameId,
+        gameType: row.gameType,
+        won: row.won,
+        playedAt: new Date(row.playedAt),
+        players,
+      };
+    }),
+  );
+
+  return {
+    total: rows.length,
+    offset,
+    limit,
+    entries,
   };
 }

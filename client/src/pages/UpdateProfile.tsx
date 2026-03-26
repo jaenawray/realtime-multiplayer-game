@@ -11,6 +11,7 @@ import {
   getPendingFriendRequests,
 } from "../services/friendService";
 import UserStatsPanel from "../components/UserStatsPanel";
+import UserGameHistoryPanel from "../components/UserGameHistoryPanel";
 
 /**
  * User's own profile page: edit display name, password, and manage friend requests.
@@ -107,6 +108,7 @@ export default function UpdateProfile() {
       <hr />
       <div className="spacedSection">
         <UserStatsPanel username={user.username} />
+        <UserGameHistoryPanel username={user.username} />
       </div>
       <hr />
       <div className="spacedSection">
