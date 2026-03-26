@@ -1,4 +1,4 @@
-import React, { type SubmitEvent, useState } from "react";
+import React, { useState } from "react";
 import useLoginContext from "./useLoginContext.ts";
 import useAuth from "./useAuth.ts";
 import { updateUser } from "../services/userService.ts";
@@ -47,7 +47,7 @@ export default function useEditProfileForm(): {
   /**
    * Handles submission of the form
    */
-  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const hasDisplayChange = display !== user.display;
