@@ -128,6 +128,18 @@ export interface UserRecord {
 }
 
 /**
+ * Represents one row in the user_stats table, tracking a user's result in a
+ * completed game.
+ */
+export interface UserStatsRecord {
+  userId: RecordId; // References User records
+  gameId: RecordId; // References Game records
+  gameType: GameKey;
+  won: boolean;
+  playedAt: DateISO;
+}
+
+/**
  * Status of a friend request: pending, accepted, or declined.
  */
 export type FriendRequestStatus = "pending" | "accepted" | "declined";

@@ -24,6 +24,28 @@ export interface SafeUserInfo {
   profileVisibility?: ProfileVisibility;
 }
 
+/**
+ * Aggregate stats for one game type.
+ */
+export interface GameTypeStats {
+  played: number;
+  wins: number;
+}
+
+/**
+ * Aggregate game stats for one user, including totals and per-type stats.
+ */
+export interface UserGameStats {
+  username: string;
+  gamesPlayed: number;
+  wins: number;
+  byType: {
+    nim: GameTypeStats;
+    guess: GameTypeStats;
+    hangman: GameTypeStats;
+  };
+}
+
 /*** TYPES USED IN THE USER API ***/
 
 /**

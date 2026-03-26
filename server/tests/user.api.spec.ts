@@ -5,9 +5,9 @@ import { app } from "../src/app.ts";
 
 let response: Response;
 const auth1 = { username: "user1", password: "pwd1111" };
-const user1 = { username: "user1", display: "Yāo" };
+const user1 = { username: "user1", display: "Yāo", profileVisibility: "public" };
 const auth2 = { username: "user2", password: "pwd2222" };
-const user2 = { username: "user2", display: "Sénior Dos" };
+const user2 = { username: "user2", display: "Sénior Dos", profileVisibility: "public" };
 
 describe("GET /api/user/:id", () => {
   it("should 404 for nonexistent users", async () => {
@@ -24,6 +24,42 @@ describe("GET /api/user/:id", () => {
     response = await supertest(app).get(`/api/user/user2`);
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual({ ...user2, createdAt: expect.anything() });
+  });
+});
+
+describe("GET /api/user/:id/stats", () => {
+  it("should 404 for nonexistent users", async () => {
+    response = await supertest(app).get(`/api/user/${randomUUID().toString()}/stats`);
+    expect(response.status).toBe(404);
+    expect(response.body).toStrictEqual({ error: "User not found" });
+  });
+
+  it("should return aggregated stats with games played and wins by type", async () => {
+    response = await supertest(app).get(`/api/user/user2/stats`);
+    expect(response.status).toBe(200);
+    expect(response.body).toStrictEqual({
+      username: "user2",
+      gamesPlayed: 1,
+      wins: 0,
+      byType: {
+        nim: { played: 1, wins: 0 },
+        guess: { played: 0, wins: 0 },
+        hangman: { played: 0, wins: 0 },
+      },
+    });
+
+    response = await supertest(app).get(`/api/user/user3/stats`);
+    expect(response.status).toBe(200);
+    expect(response.body).toStrictEqual({
+      username: "user3",
+      gamesPlayed: 1,
+      wins: 1,
+      byType: {
+        nim: { played: 1, wins: 1 },
+        guess: { played: 0, wins: 0 },
+        hangman: { played: 0, wins: 0 },
+      },
+    });
   });
 });
 

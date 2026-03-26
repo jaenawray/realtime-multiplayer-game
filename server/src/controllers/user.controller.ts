@@ -1,4 +1,10 @@
-import { type SafeUserInfo, withAuth, zUserAuth, zUserUpdateRequest } from "@gamenite/shared";
+import {
+  type SafeUserInfo,
+  type UserGameStats,
+  withAuth,
+  zUserAuth,
+  zUserUpdateRequest,
+} from "@gamenite/shared";
 import {
   createUser,
   getUsersByUsername,
@@ -8,6 +14,7 @@ import {
 import { type RestAPI } from "../types.ts";
 import { z } from "zod";
 import { checkAuth, getUserByUsername } from "../services/auth.service.ts";
+import { getUserGameStats } from "../services/userStats.service.ts";
 
 /**
  * Handles user login by validating credentials.
@@ -79,6 +86,21 @@ export const getByUsername: RestAPI<SafeUserInfo, { username: string }> = async 
     return;
   }
   res.send(await populateSafeUserInfo(user.userId));
+};
+
+/**
+ * Retrieves aggregate game stats by username.
+ */
+export const getStatsByUsername: RestAPI<UserGameStats, { username: string }> = async (
+  req,
+  res,
+) => {
+  const stats = await getUserGameStats(req.params.username);
+  if (!stats) {
+    res.status(404).send({ error: "User not found" });
+    return;
+  }
+  res.send(stats);
 };
 
 /**

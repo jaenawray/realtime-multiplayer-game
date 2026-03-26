@@ -1,0 +1,21 @@
+.userStatsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.userStatsTable {
+  border-collapse: collapse;
+  width: min(480px, 100%);
+}
+
+.userStatsTable th,
+.userStatsTable td {
+  border: 1px solid #ddd;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.userStatsTable th {
+  background: #f5f5f5;
+}

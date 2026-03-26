@@ -7,6 +7,7 @@ import { guessGameService } from "../games/guess.ts";
 import { hangmanGameService } from "../games/hangman.ts";
 import { type GameViewUpdates, type UserWithId } from "../types.ts";
 import { GameRepo } from "../repository.ts";
+import { recordCompletedGame } from "./userStats.service.ts";
 
 /**
  * The service interface for individual games
@@ -173,6 +174,9 @@ export async function updateGame(
 ): Promise<GameUpdateResult> {
   const game = await GameRepo.find(gameId);
   if (!game) throw new Error(`user ${user.username} acted on an invalid game`);
+  if (game.done) {
+    throw new Error(`user ${user.username} made a move in a game that is already done`);
+  }
   if (!game.state) {
     throw new Error(`user ${user.username} made a move in game of that hadn't started`);
   }
@@ -186,6 +190,9 @@ export async function updateGame(
   game.state = result.state;
   game.done = game.done || result.done;
   await GameRepo.set(gameId, game);
+  if (game.done) {
+    await recordCompletedGame(gameId, game);
+  }
 
   return {
     views: result.views,

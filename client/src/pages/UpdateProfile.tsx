@@ -10,6 +10,7 @@ import {
   declineFriendRequest,
   getPendingFriendRequests,
 } from "../services/friendService";
+import UserStatsPanel from "../components/UserStatsPanel";
 
 /**
  * User's own profile page: edit display name, password, and manage friend requests.
@@ -102,6 +103,10 @@ export default function UpdateProfile() {
           <li>Username: {user.username}</li>
           <li>Account created {timeSince(user.createdAt)}</li>
         </ul>
+      </div>
+      <hr />
+      <div className="spacedSection">
+        <UserStatsPanel username={user.username} />
       </div>
       <hr />
       <div className="spacedSection">

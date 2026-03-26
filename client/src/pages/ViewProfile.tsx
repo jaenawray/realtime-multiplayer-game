@@ -5,6 +5,7 @@ import useTimeSince from "../hooks/useTimeSince";
 import { getFriendStatus, sendFriendRequest } from "../services/friendService";
 import { getUserById } from "../services/userService";
 import ProfilePictureDisplay from "../components/ProfilePictureDisplay";
+import UserStatsPanel from "../components/UserStatsPanel";
 
 interface ViewProfileProps {
   username: string;
@@ -141,6 +142,11 @@ export default function ViewProfile({ username }: ViewProfileProps) {
                   <p className="smallAndGray" style={{ marginTop: "0.5rem", fontStyle: "italic" }}>
                     This profile is set to friends-only. Add them as a friend to see more details.
                   </p>
+                )}
+                {canViewPrivateInfo && (
+                  <div style={{ marginTop: "1rem" }}>
+                    <UserStatsPanel username={profileUser.username} />
+                  </div>
                 )}
               </div>
             </div>

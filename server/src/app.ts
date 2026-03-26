@@ -50,6 +50,7 @@ app.use(
         .post("/friend-status", friend.postFriendStatus)
         .post("/friends-list", friend.getFriendsListEndpoint)
         .post("/remove-friend", friend.postRemoveFriend)
+        .get("/:username/stats", user.getStatsByUsername)
         .post("/:username", user.postByUsername)
         .get("/:username", user.getByUsername),
     ),
