@@ -28,6 +28,7 @@ describe("GET /api/thread/list", () => {
         display: "Yāo",
         username: "user1",
         isOnline: false,
+        profileVisibility: "public",
       },
     });
   });
@@ -52,6 +53,7 @@ describe("GET /api/thread/:id", () => {
         display: "Yāo",
         createdAt: expect.anything(),
         isOnline: false,
+        profileVisibility: "public",
       },
       createdAt: new Date("2025-04-02").toISOString(),
     });
@@ -89,6 +91,7 @@ describe("POST /api/thread/create", () => {
         display: expect.any(String),
         createdAt: expect.anything(),
         isOnline: false,
+        profileVisibility: "public",
       },
       comments: [],
     });
@@ -134,6 +137,7 @@ describe("POST /api/thread/:id/comment", () => {
           display: "Sénior Dos",
           createdAt: expect.anything(),
           isOnline: false,
+          profileVisibility: "public",
         },
       },
     ]);
