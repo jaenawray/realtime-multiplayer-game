@@ -282,11 +282,20 @@ export default function HangmanGame({
         </div>
       </div>
 
-      {view.finished && view.result === "win" && (
-        <p style={{ color: "green", fontSize: "1.5rem" }}>🎉 You won! The word was "{view.word}"</p>
+      {view.finished && view.result === "win" && view.isWordPicker && (
+        <p style={{ color: "green", fontSize: "1.5rem" }}>
+          🎉 Guessed! The word was &quot;{view.word}&quot;
+        </p>
+      )}
+      {view.finished && view.result === "win" && !view.isWordPicker && (
+        <p style={{ color: "green", fontSize: "1.5rem" }}>
+          🎉 You won! The word was &quot;{view.word}&quot;
+        </p>
       )}
       {view.finished && view.result === "lose" && (
-        <p style={{ color: "red", fontSize: "1.5rem" }}>💀 Game over! The word was "{view.word}"</p>
+        <p style={{ color: "red", fontSize: "1.5rem" }}>
+          💀 Game over! The word was &quot;{view.word}&quot;
+        </p>
       )}
 
       {!view.finished && (
@@ -305,7 +314,7 @@ export default function HangmanGame({
           ) : (
             <>
               <p>
-                It is <strong>{currentPlayerName}</strong> turn
+                It is <strong>{currentPlayerName}</strong> turn.
               </p>
               {view.canGuess && (
                 <form onSubmit={handleSubmit} style={{ marginTop: "1rem" }}>

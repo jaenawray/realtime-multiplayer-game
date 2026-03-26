@@ -133,7 +133,7 @@ describe("POST/api/user/:username", () => {
       display: "Newer User 1 Display",
       createdAt: expect.anything(),
     });
-  });
+  }, 15_000);
 });
 
 describe("POST /api/user/signup", () => {

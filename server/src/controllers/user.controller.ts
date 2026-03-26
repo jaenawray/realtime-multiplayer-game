@@ -48,7 +48,11 @@ export const postByUsername: RestAPI<SafeUserInfo, { username: string }> = async
     return;
   }
 
-  res.send(await updateUser(req.params.username, body.data.payload));
+  try {
+    res.send(await updateUser(req.params.username, body.data.payload));
+  } catch {
+    res.status(500).send({ error: "Update failed" });
+  }
 };
 
 /**
