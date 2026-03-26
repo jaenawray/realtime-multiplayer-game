@@ -30,6 +30,7 @@ describe("hangmanLogic", () => {
     const s = hangmanLogic.start(2);
     const state = hangmanLogic.update(s, { type: "submitWord", word: "CAT" }, 0)!;
     const illegal = hangmanLogic.update(state, { type: "guess", letter: "C" }, 0);
+    expect(illegal).toBeNull();
   });
 
   it("does not allow guessing out of turn", () => {
