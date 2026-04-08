@@ -274,6 +274,36 @@ export async function getFriendsList(username: string) {
 }
 
 /**
+ * Get mutual friends between two users.
+ *
+ * @param viewerUsername - The logged-in user viewing the profile
+ * @param profileUsername - The profile being viewed
+ * @returns List of shared friends
+ */
+export async function getMutualFriends(
+  viewerUsername: string,
+  profileUsername: string,
+): Promise<{ friends: Awaited<ReturnType<typeof getFriendsList>> } | { error: string }> {
+  // Validate both users
+  const viewer = await getUserByUsername(viewerUsername);
+  const profile = await getUserByUsername(profileUsername);
+  if (!viewer || !profile) return { error: "User not found" };
+  if (viewerUsername === profileUsername) return { friends: [] };
+
+  // Fetch both friend lists concurrently
+  const [viewerFriends, profileFriends] = await Promise.all([
+    getFriendsList(viewerUsername),
+    getFriendsList(profileUsername),
+  ]);
+
+  // Find intersection of viewer and profile friend lists
+  const viewerFriendUsernames = new Set(viewerFriends.map((friend) => friend.username));
+  return {
+    friends: profileFriends.filter((friend) => viewerFriendUsernames.has(friend.username)),
+  };
+}
+
+/**
  * Remove a friend (delete the friendship).
  *
  * @param username - The user removing the friend

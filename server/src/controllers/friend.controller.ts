@@ -17,6 +17,7 @@ import {
   getPendingFriendRequests,
   sendFriendRequest,
   getFriendsList,
+  getMutualFriends,
   removeFriend,
 } from "../services/friend.service.ts";
 
@@ -193,6 +194,31 @@ export const getFriendsListEndpoint: RestAPI<SafeUserInfo[]> = async (req, res) 
 
   const friends = await getFriendsList(user.username);
   res.send(friends);
+};
+
+/**
+ * Get mutual friends between current logged-in user and a target user.
+ */
+export const postMutualFriendsEndpoint: RestAPI<SafeUserInfo[]> = async (req, res) => {
+  const body = withAuth(z.object({ username: z.string() })).safeParse(req.body);
+  if (!body.success) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  const result = await getMutualFriends(user.username, body.data.payload.username);
+  if ("error" in result) {
+    res.status(400).send({ error: result.error });
+    return;
+  }
+
+  res.send(result.friends);
 };
 
 /**

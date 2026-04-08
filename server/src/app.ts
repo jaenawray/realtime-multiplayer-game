@@ -54,6 +54,7 @@ app.use(
         .delete("/friend-request/:requestId", friend.deleteFriendRequest(io))
         .post("/friend-status", friend.postFriendStatus)
         .post("/friends-list", friend.getFriendsListEndpoint)
+        .post("/mutual-friends", friend.postMutualFriendsEndpoint)
         .post("/remove-friend", friend.postRemoveFriend(io))
         .post("/block", block.postBlockUser(io))
         .post("/unblock", block.postUnblockUser(io))

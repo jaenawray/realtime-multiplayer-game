@@ -6,6 +6,7 @@ import useTimeSince from "../hooks/useTimeSince";
 import {
   blockUser,
   cancelFriendRequest,
+  fetchMutualFriends,
   getFriendStatus,
   sendFriendRequest,
   unblockUser,
@@ -15,6 +16,7 @@ import ProfilePictureDisplay from "../components/ProfilePictureDisplay";
 import UserPresenceIndicator from "../components/UserPresenceIndicator.tsx";
 import UserStatsPanel from "../components/UserStatsPanel";
 import UserGameHistoryPanel from "../components/UserGameHistoryPanel";
+import UserLink from "../components/UserLink.tsx";
 
 interface ViewProfileProps {
   username: string;
@@ -41,6 +43,9 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     | { type: "error"; msg: string }
   >({ type: "loading" });
   const [friendActionError, setFriendActionError] = useState<string | null>(null);
+  const [mutualFriends, setMutualFriends] = useState<SafeUserInfo[]>([]);
+  const [mutualFriendsError, setMutualFriendsError] = useState<string | null>(null);
+  const [isMutualFriendsLoading, setIsMutualFriendsLoading] = useState(false);
   const timeSince = useTimeSince();
 
   useEffect(() => {
@@ -85,6 +90,36 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       .catch((err) => {
         if (cancel) return;
         setFriendStatus({ type: "error", msg: `${err}` });
+      });
+
+    return () => {
+      cancel = true;
+    };
+  }, [componentState.type, username, user.username, pass]);
+
+  useEffect(() => {
+    if (componentState.type !== "profile") return;
+    let cancel = false;
+    queueMicrotask(() => {
+      setMutualFriendsError(null);
+      setIsMutualFriendsLoading(true);
+    });
+
+    fetchMutualFriends({ username: user.username, password: pass }, username)
+      .then((response) => {
+        if (cancel) return;
+        setIsMutualFriendsLoading(false);
+        if ("error" in response) {
+          setMutualFriendsError(response.error);
+          setMutualFriends([]);
+        } else {
+          setMutualFriends(response);
+        }
+      })
+      .catch((err) => {
+        if (cancel) return;
+        setIsMutualFriendsLoading(false);
+        setMutualFriendsError(`${err}`);
       });
 
     return () => {
@@ -281,6 +316,26 @@ export default function ViewProfile({ username }: ViewProfileProps) {
                     </p>
                   </div>
                 )}
+                <div style={{ marginTop: "0.75rem" }}>
+                  <h3 style={{ margin: 0 }}>Mutual friends</h3>
+                  {isMutualFriendsLoading && <p className="smallAndGray">Loading...</p>}
+                  {!isMutualFriendsLoading && mutualFriendsError && (
+                    <p className="smallAndGray">{mutualFriendsError}</p>
+                  )}
+                  {!isMutualFriendsLoading && !mutualFriendsError && mutualFriends.length === 0 && (
+                    <p className="smallAndGray">No mutual friends</p>
+                  )}
+                  {!isMutualFriendsLoading && !mutualFriendsError && mutualFriends.length > 0 && (
+                    <ul style={{ marginTop: "0.35rem" }}>
+                      {mutualFriends.map((mutualFriend) => (
+                        <li key={mutualFriend.username}>
+                          <UserLink user={mutualFriend} />{" "}
+                          <span className="smallAndGray">({mutualFriend.username})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
                 {!canViewPrivateInfo && (
                   <p className="smallAndGray" style={{ marginTop: "0.5rem", fontStyle: "italic" }}>
                     This profile is set to friends-only. Add them as a friend to see more details.
