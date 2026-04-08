@@ -14,6 +14,7 @@ interface FriendsListProps {
 export default function FriendsList({ auth, canModify = false }: FriendsListProps) {
   const { socket } = useLoginContext();
   const [friends, setFriends] = useState<SafeUserInfo[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,9 +82,30 @@ export default function FriendsList({ auth, canModify = false }: FriendsListProp
     }
   };
 
+  // Filter user's friend list based on search query
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredFriends = friends.filter((friend) => {
+    // If no entered search, show all friends in list
+    if (!normalizedQuery) return true;
+    return (
+      friend.username.toLowerCase().includes(normalizedQuery) ||
+      friend.display.toLowerCase().includes(normalizedQuery)
+    );
+  });
+
   return (
     <div>
-      <h3>Friends</h3>
+      <h3 style={{ margin: 0 }}>Friends</h3>
+      <div style={{ marginTop: "0.5rem", marginBottom: "0.75rem" }}>
+        <input
+          type="text"
+          className="widefill notTooWide"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by username or display name"
+          aria-label="Search friends"
+        />
+      </div>
       {error && (
         <p className="error-message" style={{ color: "#f00" }}>
           {error}
@@ -91,9 +113,12 @@ export default function FriendsList({ auth, canModify = false }: FriendsListProp
       )}
       {loading && <p>Loading...</p>}
       {!loading && friends.length === 0 && <p className="smallAndGray">No friends yet</p>}
-      {!loading && friends.length > 0 && (
+      {!loading && friends.length > 0 && filteredFriends.length === 0 && (
+        <p className="smallAndGray">No friends match your search</p>
+      )}
+      {!loading && filteredFriends.length > 0 && (
         <ul>
-          {friends.map((friend) => (
+          {filteredFriends.map((friend) => (
             <li
               key={friend.username}
               style={{
