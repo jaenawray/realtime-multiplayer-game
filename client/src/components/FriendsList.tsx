@@ -96,16 +96,18 @@ export default function FriendsList({ auth, canModify = false }: FriendsListProp
   return (
     <div>
       <h3 style={{ margin: 0 }}>Friends</h3>
-      <div style={{ marginTop: "0.5rem", marginBottom: "0.75rem" }}>
-        <input
-          type="text"
-          className="widefill notTooWide"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by username or display name"
-          aria-label="Search friends"
-        />
-      </div>
+      {friends.length > 1 && (
+        <div style={{ marginTop: "0.5rem", marginBottom: "0.75rem" }}>
+          <input
+            type="text"
+            className="widefill notTooWide"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by username or display name"
+            aria-label="Search friends"
+          />
+        </div>
+      )}
       {error && (
         <p className="error-message" style={{ color: "#f00" }}>
           {error}
