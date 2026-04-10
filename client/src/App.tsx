@@ -15,6 +15,7 @@ import NewGame from "./pages/NewGame.tsx";
 import Game from "./pages/Game.tsx";
 import GameList from "./pages/GameList.tsx";
 import ThreadPage from "./pages/ThreadPage.tsx";
+import Messages from "./pages/Messages.tsx";
 import { ErrorBoundary } from "react-error-boundary";
 import fallback from "./fallback.tsx";
 import NewThread from "./pages/NewThread.tsx";
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="/forum" element={<ThreadList />} />
             <Route path="/forum/post/new" element={<NewThread />} />
             <Route path="/forum/post/:threadId" element={<ThreadPage />} />
+            <Route path="/messages" element={<Messages />} />
             <Route path="/games" element={<GameList />} />
             <Route path="/game/new" element={<NewGame />} />
             <Route path="/game/:gameId" element={<Game />} />

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { NavLink, type NavLinkRenderProps } from "react-router-dom";
 import useAuth from "../hooks/useAuth.ts";
 import usePendingRequestNotification from "../hooks/usePendingRequestNotification.ts";
+import useDirectMessageNotification from "../hooks/useDirectMessageNotification.ts";
 import NotificationBadge from "./NotificationBadge.tsx";
 
 /**
@@ -13,7 +14,10 @@ import NotificationBadge from "./NotificationBadge.tsx";
 export default function SideBarNav() {
   const [showOptions, setShowOptions] = useState<boolean>(false);
   const { username } = useAuth();
-  const { unreadCount, markAllRead } = usePendingRequestNotification();
+  const { unreadCount: unreadFriendRequestCount, markAllRead: markAllFriendRequestsRead } =
+    usePendingRequestNotification();
+  const { unreadCount: unreadDirectMessageCount, markAllRead: markAllDirectMessagesRead } =
+    useDirectMessageNotification();
 
   const toggleOptions = () => {
     setShowOptions(!showOptions);
@@ -34,16 +38,26 @@ export default function SideBarNav() {
         Forum
       </NavLink>
       <NavLink
+        to="/messages"
+        className={navClass}
+        onClick={() => {
+          markAllDirectMessagesRead();
+        }}
+      >
+        Messages
+        <NotificationBadge count={unreadDirectMessageCount} />
+      </NavLink>
+      <NavLink
         to={`/profile/${username}`}
         id="menu_user"
         className={navClass}
         onClick={() => {
           toggleOptions();
-          markAllRead();
+          markAllFriendRequestsRead();
         }}
       >
         Profile
-        <NotificationBadge count={unreadCount} />
+        <NotificationBadge count={unreadFriendRequestCount} />
       </NavLink>
     </div>
   );

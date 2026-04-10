@@ -5,6 +5,8 @@ import {
   BlockRepo,
   ChatRepo,
   CommentRepo,
+  ConversationRepo,
+  DirectMessageRepo,
   FriendRequestRepo,
   GameRepo,
   MessageRepo,
@@ -127,6 +129,8 @@ export async function resetEverythingToDefaults() {
   await BlockRepo.clear();
   await ChatRepo.clear();
   await CommentRepo.clear();
+  await ConversationRepo.clear();
+  await DirectMessageRepo.clear();
   await FriendRequestRepo.clear();
   await GameRepo.clear();
   await MessageRepo.clear();

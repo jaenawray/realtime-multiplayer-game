@@ -166,3 +166,30 @@ export interface BlockRecord {
   blockedUserId: RecordId;
   createdAt: DateISO;
 }
+/**
+ * Represents a direct message between two users in the database.
+ * - `senderId`: user ID of the sender
+ * - `receiverId`: user ID of the receiver
+ * - `text`: message contents
+ * - `createdAt`: when the message was sent
+ */
+export interface DirectMessageRecord {
+  senderId: RecordId; // References User records
+  receiverId: RecordId; // References User records
+  text: string;
+  createdAt: DateISO;
+}
+
+/**
+ * Represents a conversation between two users in the database.
+ * - `user1Id`: ID of the first user
+ * - `user2Id`: ID of the second user
+ * - `messages`: ordered list of message IDs in this conversation
+ * - `updatedAt`: when the conversation was last updated
+ */
+export interface ConversationRecord {
+  user1Id: RecordId; // References User records
+  user2Id: RecordId; // References User records
+  messages: RecordId[]; // References DirectMessage records
+  updatedAt: DateISO;
+}

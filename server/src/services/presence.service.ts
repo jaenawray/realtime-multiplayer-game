@@ -55,3 +55,16 @@ export function attachPresence(user: SafeUserInfo): SafeUserInfo {
 export function attachPresenceToUsers(users: SafeUserInfo[]): SafeUserInfo[] {
   return users.map(attachPresence);
 }
+
+/**
+ * Returns all currently connected socket IDs for a username.
+ */
+export function getSocketIdsForUsername(username: string): string[] {
+  const socketIds: string[] = [];
+  for (const [socketId, mappedUsername] of socketToUsername.entries()) {
+    if (mappedUsername === username) {
+      socketIds.push(socketId);
+    }
+  }
+  return socketIds;
+}

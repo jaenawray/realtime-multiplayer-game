@@ -6,6 +6,7 @@ import { z } from "zod";
 import * as http from "node:http";
 import * as block from "./controllers/block.controller.ts";
 import * as chat from "./controllers/chat.controller.ts";
+import * as directMessage from "./controllers/directMessage.controller.ts";
 import * as friend from "./controllers/friend.controller.ts";
 import * as game from "./controllers/game.controller.ts";
 import * as presence from "./controllers/presence.controller.ts";
@@ -48,6 +49,9 @@ app.use(
         .post("/signup", user.postSignup)
         .post("/friend-request", friend.postFriendRequest(io))
         .post("/friend-requests", friend.getFriendRequests)
+        .post("/direct-message", directMessage.postDirectMessage(io))
+        .post("/direct-messages", directMessage.getDirectMessageConversations)
+        .post("/direct-messages/thread", directMessage.postDirectMessageThread)
         .post("/outgoing-friend-requests", friend.getOutgoingFriendRequests)
         .post("/friend-request/:requestId/accept", friend.postAcceptFriendRequest(io))
         .post("/friend-request/:requestId/decline", friend.postDeclineFriendRequest(io))

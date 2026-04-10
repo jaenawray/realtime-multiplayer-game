@@ -4,6 +4,8 @@ import type {
   BlockRecord,
   ChatRecord,
   CommentRecord,
+  ConversationRecord,
+  DirectMessageRecord,
   FriendRequestRecord,
   GameRecord,
   MessageRecord,
@@ -16,6 +18,8 @@ export const AuthRepo = createRepo<AuthRecord>("auth");
 export const BlockRepo = createRepo<BlockRecord>("block");
 export const ChatRepo = createRepo<ChatRecord>("chat");
 export const CommentRepo = createRepo<CommentRecord>("comment");
+export const ConversationRepo = createRepo<ConversationRecord>("conversation");
+export const DirectMessageRepo = createRepo<DirectMessageRecord>("directMessage");
 export const FriendRequestRepo = createRepo<FriendRequestRecord>("friendRequest");
 export const GameRepo = createRepo<GameRecord>("game");
 export const MessageRepo = createRepo<MessageRecord>("message");

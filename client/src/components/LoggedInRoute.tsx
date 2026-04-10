@@ -3,6 +3,7 @@ import { type AuthContext, LoginContext } from "../contexts/LoginContext.ts";
 import { type GameSocket } from "../util/types.ts";
 import { Navigate } from "react-router-dom";
 import PendingRequestNotificationProvider from "./PendingRequestNotificationProvider.tsx";
+import DirectMessageNotificationProvider from "./DirectMessageNotificationProvider.tsx";
 
 interface LoggedInRouteParams {
   auth: AuthContext | null;
@@ -39,7 +40,9 @@ export default function LoggedInRoute({ auth, socket, children }: LoggedInRouteP
 
   return context ? (
     <LoginContext.Provider value={context}>
-      <PendingRequestNotificationProvider>{children}</PendingRequestNotificationProvider>
+      <PendingRequestNotificationProvider>
+        <DirectMessageNotificationProvider>{children}</DirectMessageNotificationProvider>
+      </PendingRequestNotificationProvider>
     </LoginContext.Provider>
   ) : (
     <Navigate to="/login" />
