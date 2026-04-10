@@ -10,6 +10,9 @@ const updatedProfile = {
   avatar: "https://example.com/profile-pioneer.png",
   bio: "Cross-feature integration tester.",
   profileVisibility: "friends-only" as const,
+  socialTwitter: "https://twitter.com/profilepioneer",
+  socialInstagram: "https://www.instagram.com/profilepioneer/",
+  socialDiscord: "https://discord.com/users/123456789",
 };
 
 describe("Profile integration across friend system, games, forums, and chat", () => {

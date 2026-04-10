@@ -1,5 +1,9 @@
-import type { SafeUserInfo } from "../../../shared/src/user.types.ts";
-import type { FriendRequestInfo } from "../../../shared/src/friend.types.ts";
+import type {
+  ErrorMsg,
+  FriendProfileStatus,
+  FriendRequestInfo,
+  SafeUserInfo,
+} from "@gamenite/shared";
 import { useEffect, useState } from "react";
 import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
@@ -17,6 +21,7 @@ import UserPresenceIndicator from "../components/UserPresenceIndicator.tsx";
 import UserStatsPanel from "../components/UserStatsPanel";
 import UserGameHistoryPanel from "../components/UserGameHistoryPanel";
 import UserLink from "../components/UserLink.tsx";
+import type { APIResponse } from "../util/types.ts";
 
 interface ViewProfileProps {
   username: string;
@@ -52,7 +57,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     let cancel = false;
 
     getUserById(username)
-      .then((response) => {
+      .then((response: SafeUserInfo | ErrorMsg) => {
         if (cancel) return;
         if ("error" in response) {
           setComponentState({ type: "error", msg: response.error });
@@ -77,7 +82,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     queueMicrotask(() => setFriendStatus({ type: "loading" }));
 
     getFriendStatus({ username: user.username, password: pass }, username)
-      .then((response) => {
+      .then((response: FriendProfileStatus | ErrorMsg) => {
         if (cancel) return;
         if ("error" in response) {
           setFriendStatus({ type: "error", msg: response.error });
@@ -105,8 +110,13 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       setIsMutualFriendsLoading(true);
     });
 
-    fetchMutualFriends({ username: user.username, password: pass }, username)
-      .then((response) => {
+    void (async () => {
+      try {
+        const mutualFriendsRequest: APIResponse<SafeUserInfo[]> = fetchMutualFriends(
+          { username: user.username, password: pass },
+          username,
+        );
+        const response: SafeUserInfo[] | ErrorMsg = await mutualFriendsRequest;
         if (cancel) return;
         setIsMutualFriendsLoading(false);
         if ("error" in response) {
@@ -115,12 +125,12 @@ export default function ViewProfile({ username }: ViewProfileProps) {
         } else {
           setMutualFriends(response);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         if (cancel) return;
         setIsMutualFriendsLoading(false);
         setMutualFriendsError(`${err}`);
-      });
+      }
+    })();
 
     return () => {
       cancel = true;
@@ -267,11 +277,17 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     case "waiting":
       return <div>Loading...</div>;
     case "profile": {
-      const profileUser = componentState.user;
+      const profileUser: SafeUserInfo = componentState.user;
       // Check if profile is visible: public profiles always visible, friends-only requires being friends
       const isPublic = profileUser.profileVisibility !== "friends-only";
       const isFriend = friendStatus.type === "friends";
       const canViewPrivateInfo = isPublic || isFriend;
+      const {
+        socialTwitter: twitterUrl,
+        socialInstagram: instagramUrl,
+        socialDiscord: discordUrl,
+      } = profileUser;
+      const hasSocialLinks = canViewPrivateInfo && !!(twitterUrl || instagramUrl || discordUrl);
 
       return (
         <div className="content">
@@ -314,6 +330,34 @@ export default function ViewProfile({ username }: ViewProfileProps) {
                     <p style={{ whiteSpace: "pre-wrap", margin: "0.25rem 0 0 0" }}>
                       {profileUser.bio}
                     </p>
+                  </div>
+                )}
+                {hasSocialLinks && (
+                  <div style={{ marginTop: "0.75rem" }}>
+                    <strong>Social</strong>
+                    <ul style={{ margin: "0.35rem 0 0 0", paddingLeft: "1.25rem" }}>
+                      {twitterUrl ? (
+                        <li>
+                          <a href={twitterUrl} target="_blank" rel="noopener noreferrer">
+                            Twitter / X
+                          </a>
+                        </li>
+                      ) : null}
+                      {instagramUrl ? (
+                        <li>
+                          <a href={instagramUrl} target="_blank" rel="noopener noreferrer">
+                            Instagram
+                          </a>
+                        </li>
+                      ) : null}
+                      {discordUrl ? (
+                        <li>
+                          <a href={discordUrl} target="_blank" rel="noopener noreferrer">
+                            Discord
+                          </a>
+                        </li>
+                      ) : null}
+                    </ul>
                   </div>
                 )}
                 <div style={{ marginTop: "0.75rem" }}>

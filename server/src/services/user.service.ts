@@ -20,6 +20,9 @@ export async function populateSafeUserInfo(userId: string): Promise<SafeUserInfo
     avatar: record.avatar,
     bio: record.bio,
     profileVisibility: record.profileVisibility ?? "public",
+    socialTwitter: record.socialTwitter,
+    socialInstagram: record.socialInstagram,
+    socialDiscord: record.socialDiscord,
   });
 }
 
@@ -82,7 +85,16 @@ export async function getUsersByUsername(usernames: string[]): Promise<SafeUserI
  */
 export async function updateUser(
   username: string,
-  { display, password, avatar, bio, profileVisibility }: UserUpdateRequest,
+  {
+    display,
+    password,
+    avatar,
+    bio,
+    profileVisibility,
+    socialTwitter,
+    socialInstagram,
+    socialDiscord,
+  }: UserUpdateRequest,
 ): Promise<SafeUserInfo> {
   const user = await getUserByUsername(username);
   if (!user) throw new Error(`No user ${username}`);
@@ -92,6 +104,18 @@ export async function updateUser(
   if (avatar !== undefined) newUser.avatar = avatar;
   if (bio !== undefined) newUser.bio = bio;
   if (profileVisibility !== undefined) newUser.profileVisibility = profileVisibility;
+  if (socialTwitter !== undefined) {
+    if (socialTwitter === "") delete newUser.socialTwitter;
+    else newUser.socialTwitter = socialTwitter;
+  }
+  if (socialInstagram !== undefined) {
+    if (socialInstagram === "") delete newUser.socialInstagram;
+    else newUser.socialInstagram = socialInstagram;
+  }
+  if (socialDiscord !== undefined) {
+    if (socialDiscord === "") delete newUser.socialDiscord;
+    else newUser.socialDiscord = socialDiscord;
+  }
   await UserRepo.set(user.userId, newUser);
   return populateSafeUserInfo(user.userId);
 }

@@ -44,6 +44,12 @@ export default function UpdateProfile() {
     bioMaxLength,
     profileVisibility,
     setProfileVisibility,
+    twitterLink,
+    setTwitterLink,
+    instagramLink,
+    setInstagramLink,
+    discordLink,
+    setDiscordLink,
     err,
     handleSubmit,
   } = useEditProfileForm();
@@ -361,9 +367,81 @@ export default function UpdateProfile() {
       </div>
       <hr />
       <div className="spacedSection">
+        <h3>Social links</h3>
+        <p className="smallAndGray" style={{ marginBottom: "0.75rem" }}>
+          Optional links to Twitter / X, Instagram, and Discord. Use full URLs starting with{" "}
+          <code>https://</code>.
+        </p>
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxWidth: "32rem" }}
+        >
+          <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            <span>Twitter / X</span>
+            <div style={{ display: "flex", flexDirection: "row", gap: "0.5rem", flexWrap: "wrap" }}>
+              <input
+                className="widefill notTooWide"
+                type="url"
+                placeholder="https://twitter.com/yourhandle"
+                value={twitterLink}
+                onChange={(e) => setTwitterLink(e.target.value)}
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                className="secondary narrow"
+                onClick={() => setTwitterLink(user.socialTwitter ?? "")}
+              >
+                Reset
+              </button>
+            </div>
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            <span>Instagram</span>
+            <div style={{ display: "flex", flexDirection: "row", gap: "0.5rem", flexWrap: "wrap" }}>
+              <input
+                className="widefill notTooWide"
+                type="url"
+                placeholder="https://www.instagram.com/yourhandle"
+                value={instagramLink}
+                onChange={(e) => setInstagramLink(e.target.value)}
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                className="secondary narrow"
+                onClick={() => setInstagramLink(user.socialInstagram ?? "")}
+              >
+                Reset
+              </button>
+            </div>
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+            <span>Discord</span>
+            <div style={{ display: "flex", flexDirection: "row", gap: "0.5rem", flexWrap: "wrap" }}>
+              <input
+                className="widefill notTooWide"
+                type="url"
+                placeholder="https://discord.com/users/… or invite link"
+                value={discordLink}
+                onChange={(e) => setDiscordLink(e.target.value)}
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                className="secondary narrow"
+                onClick={() => setDiscordLink(user.socialDiscord ?? "")}
+              >
+                Reset
+              </button>
+            </div>
+          </label>
+        </div>
+      </div>
+      <hr />
+      <div className="spacedSection">
         <h3>Profile visibility</h3>
         <p className="smallAndGray" style={{ marginBottom: "0.5rem" }}>
-          Control who can see your profile details (bio, avatar, etc.)
+          Control who can see your profile details (bio, avatar, social links, etc.)
         </p>
         <select
           className="notTooWide"

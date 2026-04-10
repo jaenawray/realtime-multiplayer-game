@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { gameNames } from "../util/consts.ts";
 import useTimeSince from "../hooks/useTimeSince.ts";
 import UserLink from "./UserLink.tsx";
+import ProfilePictureDisplay from "./ProfilePictureDisplay.tsx";
 
 /**
  * Summarizes information for a single game as part of a list of games
@@ -29,6 +30,11 @@ export default function GameSummaryView({
         A game of {gameNames[type]}
       </NavLink>
       <div className="lastActivity">
+        <ProfilePictureDisplay
+          avatarUrl={createdBy.avatar}
+          displayName={createdBy.display}
+          size="tiny"
+        />
         <UserLink user={createdBy} capitalize /> created {timeSince(createdAt)}
       </div>
     </div>

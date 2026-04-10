@@ -117,6 +117,7 @@ export interface ThreadRecord {
  * - `avatar`: URL to the user's profile picture, or undefined for default avatar
  * - `bio`: User's bio text (max 500 characters), or undefined if not set
  * - `profileVisibility`: Profile visibility setting (public or friends-only), defaults to public
+ * - `socialTwitter`, `socialInstagram`, `socialDiscord`: optional https URLs for external profiles
  */
 export interface UserRecord {
   username: string; // References Auth records
@@ -125,6 +126,9 @@ export interface UserRecord {
   avatar?: string;
   bio?: string;
   profileVisibility?: "public" | "friends-only";
+  socialTwitter?: string;
+  socialInstagram?: string;
+  socialDiscord?: string;
 }
 
 /**

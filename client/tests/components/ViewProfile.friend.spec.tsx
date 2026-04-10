@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { SafeUserInfo } from "@gamenite/shared";
+import type { FriendRequestInfo, SafeUserInfo } from "@gamenite/shared";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LoginContext } from "../../src/contexts/LoginContext.ts";
@@ -34,11 +34,25 @@ const baseProfile: SafeUserInfo = {
   profileVisibility: "public" as const,
 };
 
+const mockOutgoingFriendRequest: FriendRequestInfo = {
+  requestId: "req-123",
+  fromUser: {
+    username: "user1",
+    display: "Yāo",
+    createdAt: new Date("2025-01-01"),
+    isOnline: true,
+    profileVisibility: "public",
+  },
+  toUser: baseProfile,
+  status: "pending",
+  createdAt: new Date("2025-01-01"),
+};
+
 const renderProfile = (status: FriendStatus) => {
   vi.mocked(userService.getUserById).mockResolvedValue(baseProfile);
   vi.mocked(friendService.getFriendStatus).mockResolvedValue(status);
   vi.mocked(friendService.fetchMutualFriends).mockResolvedValue([]);
-  vi.mocked(friendService.sendFriendRequest).mockResolvedValue({ requestId: "req-123" });
+  vi.mocked(friendService.sendFriendRequest).mockResolvedValue(mockOutgoingFriendRequest);
   vi.mocked(friendService.blockUser).mockResolvedValue({ success: true });
   vi.mocked(friendService.unblockUser).mockResolvedValue({ success: true });
   vi.mocked(friendService.cancelFriendRequest).mockResolvedValue({ success: true });

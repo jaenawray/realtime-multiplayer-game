@@ -15,6 +15,7 @@ export type ProfileVisibility = "public" | "friends-only";
  * - `bio`: User's bio text (max 500 characters), or undefined if not set
  * - `isOnline`: present on some API responses when the server tracks WebSocket presence
  * - `profileVisibility`: Profile visibility setting (public or friends-only), defaults to public
+ * - `socialTwitter`, `socialInstagram`, `socialDiscord`: optional https links to external profiles
  */
 export interface SafeUserInfo {
   username: string;
@@ -24,6 +25,9 @@ export interface SafeUserInfo {
   bio?: string;
   isOnline?: boolean;
   profileVisibility?: ProfileVisibility;
+  socialTwitter?: string;
+  socialInstagram?: string;
+  socialDiscord?: string;
 }
 
 /**
@@ -75,10 +79,16 @@ export interface UserGameHistoryPage {
  * Represents allowed updates to a user.
  */
 export type UserUpdateRequest = z.infer<typeof zUserUpdateRequest>;
+
+const optionalHttpUrl = z.union([z.literal(""), z.string().max(2048).url("Must be a valid URL")]);
+
 export const zUserUpdateRequest = z.object({
   password: z.string().optional(),
   display: z.string().optional(),
   avatar: z.string().optional(),
   bio: z.string().max(500, "Bio must be 500 characters or less").optional(),
   profileVisibility: z.enum(["public", "friends-only"]).optional(),
+  socialTwitter: optionalHttpUrl.optional(),
+  socialInstagram: optionalHttpUrl.optional(),
+  socialDiscord: optionalHttpUrl.optional(),
 });
