@@ -10,6 +10,26 @@ skeleton for the app and then additional features will be proposed and
 implemented by you! All implementation will take place in the TypeScript
 programming language, using React for the user interface.
 
+## Features
+
+The app includes (among other things):
+
+- **Games** — Create and play Nim, Guess, and Hangman; in-game chat; game
+  lists show the creator’s avatar next to recent activity (same pattern as
+  forum posts).
+- **Forum** — Threads and comments with author avatars and profile links.
+- **Profiles** — Display name, optional bio, avatar gallery, profile
+  visibility (public or friends-only), and optional social links (Twitter/X,
+  Instagram, Discord) with URL validation.
+- **Friends** — Send, accept, decline, or cancel friend requests; friends list
+  with search; mutual friends on profiles; remove friends.
+- **Blocking** — Block and unblock users; manage a blocked-users list from
+  your profile.
+- **Direct messages** — Conversations with friends, with real-time delivery
+  over Socket.io where supported.
+- **Presence** — Online/offline indicators for users where the client
+  registers presence.
+
 ## Getting Started
 
 Run `npm install` in the root directory to install all dependencies for the
@@ -89,24 +109,60 @@ endpoints in `server/src/app.ts`.
 
 #### `/api/user`
 
-| Endpoint             | Method | Description                                     |
-| -------------------- | ------ | ----------------------------------------------- |
-| `/list`              | POST   | Get details of a list of users                  |
-| `/login`             | POST   | Validate username/password entry                |
-| `/signup`            | POST   | Create a new user                               |
-| `/:username/stats`   | GET    | Get aggregate game stats for a user             |
-| `/:username/history` | GET    | Get paginated recent completed games for a user |
-| `/:username`         | POST   | Update user's displayname or password           |
-| `/:username`         | GET    | Get information about a user                    |
+Core user and profile endpoints (authenticated updates use `POST /:username`
+with `{ auth, payload }`; see controllers and `shared/src/user.types.ts`).
+
+| Endpoint             | Method | Description                                                                 |
+| -------------------- | ------ | --------------------------------------------------------------------------- |
+| `/list`              | POST   | Get details for a list of usernames                                         |
+| `/login`             | POST   | Log in; returns safe user info                                              |
+| `/signup`            | POST   | Register a new user                                                         |
+| `/:username/stats`   | GET    | Aggregate game stats for a user                                             |
+| `/:username/history` | GET    | Paginated recent completed games (query: offset, limit)                     |
+| `/:username`         | POST   | Update profile (display, password, avatar, bio, visibility, social URLs, …) |
+| `/:username`         | GET    | Get public profile info for a user                                          |
+
+Friend and relationship endpoints (all expect appropriate auth in the body):
+
+| Endpoint                             | Method | Description                            |
+| ------------------------------------ | ------ | -------------------------------------- |
+| `/friend-request`                    | POST   | Send a friend request                  |
+| `/friend-requests`                   | POST   | List incoming pending requests         |
+| `/outgoing-friend-requests`          | POST   | List outgoing pending requests         |
+| `/friend-request/:requestId/accept`  | POST   | Accept a request                       |
+| `/friend-request/:requestId/decline` | POST   | Decline a request                      |
+| `/friend-request/:requestId`         | DELETE | Cancel an outgoing request             |
+| `/friend-status`                     | POST   | Status between viewer and another user |
+| `/friends-list`                      | POST   | Current user’s friends                 |
+| `/mutual-friends`                    | POST   | Mutual friends with another user       |
+| `/remove-friend`                     | POST   | Remove an existing friendship          |
+| `/block`                             | POST   | Block a user                           |
+| `/unblock`                           | POST   | Unblock a user                         |
+| `/blocked-users`                     | POST   | List users you have blocked            |
+
+Direct message endpoints:
+
+| Endpoint                  | Method | Description                                |
+| ------------------------- | ------ | ------------------------------------------ |
+| `/direct-message`         | POST   | Send a DM to another user                  |
+| `/direct-messages`        | POST   | List DM conversations for the current user |
+| `/direct-messages/thread` | POST   | Message thread with a specific user        |
 
 ### Websockets
 
 The Socket.io API for event-driven communication between clients and the
-server is detailed in `shared/src/socket.types.ts`.
+server is detailed in `shared/src/socket.types.ts`. In addition to chat and
+game events, the server emits friend-request, direct-message, block/unblock,
+presence, and related notifications so the UI can stay in sync in real time.
 
 ## Data Architecture
 
 This web application stores information about users, forum posts, and games.
+User records also hold profile fields used by the UI (for example display
+name, optional avatar URL, bio, visibility, and optional social media URLs).
+The high-level structure below is simplified; see `server/src/models.ts` and
+shared types for the full shape.
+
 The structure of the data can be described by this diagram:
 
 ```mermaid
